@@ -1,4 +1,5 @@
 # NodeCAD
+![Ekran Görüntüsü - 2024-05-16 00-04-48](https://github.com/HakanSeven12/NodeCAD/assets/3831435/5bbacf1b-2d33-4740-9261-e22247ca0c9c)
 
 ## Installation and Configuration
 ```
