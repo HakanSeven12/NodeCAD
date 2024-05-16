@@ -117,7 +117,7 @@ from OCCUtils.edge import Edge
 
 from datetime import datetime
 from OCC.Display.SimpleGui import init_display
-display, start_display, add_menu, add_function_to_menu = init_display()
+display, start_display, add_menu, add_function_to_menu = init_display(backend_str="pyside6")
 add_menu('View')
 
 def Fit_All():
@@ -200,7 +200,7 @@ class PythonOCCNodeBase_DynamicInputs(PythonOCCNodeBase):
                 self.register_new_operand_input(i)
 
     def add_operand_input(self):
-        self.create_input_dt(dtype=dtypes.Data(size='s'))
+        self.create_input_dt(type_='data')
         self.register_new_operand_input(self.num_inputs)
         self.update()
 
@@ -245,13 +245,13 @@ class Pnt_Node(GpNodeBase):
     title = 'point'
 
     init_inputs = [
-        NodeInputBP('x', dtype=dtypes.Data(size='s')),
-        NodeInputBP('y', dtype=dtypes.Data(size='s')),
-        NodeInputBP('z', dtype=dtypes.Data(size='s')),
+        NodeInputType('x', type_='data'),
+        NodeInputType('y', type_='data'),
+        NodeInputType('z', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -271,7 +271,7 @@ class PointZero_Node(GpNodeBase):
     title = 'Point0'
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def place_event(self):
@@ -288,13 +288,13 @@ class DeconstructPnt_Node(GpNodeBase):
     title = 'deconstruct point'
 
     init_inputs = [
-        NodeInputBP('point', dtype=dtypes.Data(size='s')),
+        NodeInputType('point', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP('X'),
-        NodeOutputBP('Y'),
-        NodeOutputBP('Z'),
+        NodeOutputType('X'),
+        NodeOutputType('Y'),
+        NodeOutputType('Z'),
     ]
 
     def update_event(self, inp=-1):
@@ -315,13 +315,13 @@ class Vec_Node(GpNodeBase):
     title = 'Vector'
 
     init_inputs = [
-        NodeInputBP('x', dtype=dtypes.Data(size='s')),
-        NodeInputBP('y', dtype=dtypes.Data(size='s')),
-        NodeInputBP('z', dtype=dtypes.Data(size='s')),
+        NodeInputType('x', type_='data'),
+        NodeInputType('y', type_='data'),
+        NodeInputType('z', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -337,7 +337,7 @@ class DX_Node(GpNodeBase):
     title = 'DirX'
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def place_event(self):
@@ -353,7 +353,7 @@ class DY_Node(GpNodeBase):
     title = 'DirY'
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def place_event(self):
@@ -369,7 +369,7 @@ class DZ_Node(GpNodeBase):
     title = 'DirZ'
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def place_event(self):
@@ -388,13 +388,13 @@ class Dir_Node(GpNodeBase):
     title = 'dir'
 
     init_inputs = [
-        NodeInputBP('x', dtype=dtypes.Data(size='s')),
-        NodeInputBP('y', dtype=dtypes.Data(size='s')),
-        NodeInputBP('z', dtype=dtypes.Data(size='s')),
+        NodeInputType('x', type_='data'),
+        NodeInputType('y', type_='data'),
+        NodeInputType('z', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -412,12 +412,12 @@ class Ax2_Node(GpNodeBase):
     title = 'Ax2'
 
     init_inputs = [
-        NodeInputBP('point', dtype=dtypes.Data(size='s')),
-        NodeInputBP('dir', dtype=dtypes.Data(size='s')),
+        NodeInputType('point', type_='data'),
+        NodeInputType('dir', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -432,7 +432,7 @@ class XOY_Node(GpNodeBase):
     title = 'AxZ'
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def place_event(self):
@@ -447,7 +447,7 @@ class YOZ_Node(GpNodeBase):
     title = 'AxX'
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def place_event(self):
@@ -462,7 +462,7 @@ class ZOX_Node(GpNodeBase):
     title = 'AxY'
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def place_event(self):
@@ -479,12 +479,12 @@ class Pln_Node(GpNodeBase):
     title = 'Plane'
 
     init_inputs = [
-        NodeInputBP('point', dtype=dtypes.Data(size='s')),
-        NodeInputBP('dir', dtype=dtypes.Data(size='s')),
+        NodeInputType('point', type_='data'),
+        NodeInputType('dir', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -502,12 +502,12 @@ class Trsf_Node(GpNodeBase):
     title = 'Transform'
 
     init_inputs = [
-        NodeInputBP('shapes', dtype=dtypes.Data(size='s')),
-        NodeInputBP('vectors', dtype=dtypes.Data(size='s')),
+        NodeInputType('shapes', type_='data'),
+        NodeInputType('vectors', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -575,13 +575,13 @@ class Move2pts_Node(GpNodeBase):
     title = 'Move2pnts'
 
     init_inputs = [
-        NodeInputBP('shapes', dtype=dtypes.Data(size='s')),
-        NodeInputBP('from', dtype=dtypes.Data(size='s')),
-        NodeInputBP('to', dtype=dtypes.Data(size='s')),
+        NodeInputType('shapes', type_='data'),
+        NodeInputType('from', type_='data'),
+        NodeInputType('to', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -626,12 +626,12 @@ class MidPoint_Node(GpNodeBase):
     title = 'MidPoint'
 
     init_inputs = [
-        NodeInputBP('pointA', dtype=dtypes.Data(size='s')),
-        NodeInputBP('pointB', dtype=dtypes.Data(size='s')),
+        NodeInputType('pointA', type_='data'),
+        NodeInputType('pointB', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -652,11 +652,11 @@ class Get_dir_from_edge_Node(GpNodeBase):
     title = 'DirfromEdge'
 
     init_inputs = [
-        NodeInputBP('Edge', dtype=dtypes.Data(size='s')),
+        NodeInputType('Edge', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -710,12 +710,12 @@ class TwoPtsEdge_Node(BrepBuilderAPINodeBase):
     title = '2ptsEdge'
 
     init_inputs = [
-        NodeInputBP('pnt1', dtype=dtypes.Data(size='s')),
-        NodeInputBP('Pnt2', dtype=dtypes.Data(size='s')),
+        NodeInputType('pnt1', type_='data'),
+        NodeInputType('Pnt2', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -742,11 +742,11 @@ class Wire_Node(BrepBuilderAPINodeBase):
     title = 'Wire'
 
     init_inputs = [
-        NodeInputBP('pntslist', dtype=dtypes.Data(size='s')),
+        NodeInputType('pntslist', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -773,12 +773,12 @@ class WireFillet2d_Node(BrepBuilderAPINodeBase):
     title = '2dWireFillet'
 
     init_inputs = [
-        NodeInputBP('pntslist', dtype=dtypes.Data(size='s')),
-        NodeInputBP('radius', dtype=dtypes.Data(size='s')),
+        NodeInputType('pntslist', type_='data'),
+        NodeInputType('radius', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -820,12 +820,12 @@ class DiscretizeWire_Node(BrepBuilderAPINodeBase):
     title = 'DiscretizeWire'
 
     init_inputs = [
-        NodeInputBP('Wire', dtype=dtypes.Data(size='s')),
-        NodeInputBP('Nb', dtype=dtypes.Data(size='s')),
+        NodeInputType('Wire', type_='data'),
+        NodeInputType('Nb', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -852,11 +852,11 @@ class CurveLength_Node(BrepBuilderAPINodeBase):
     title = 'CurveLength'
 
     init_inputs = [
-        NodeInputBP('Wire/Edge', dtype=dtypes.Data(size='s')),
+        NodeInputType('Wire/Edge', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -896,12 +896,12 @@ class Pipe_Node(BrepOffsetAPINodeBase):
     title = 'pipe'
 
     init_inputs = [
-        NodeInputBP('wire', dtype=dtypes.Data(size='s')),
-        NodeInputBP('radius', dtype=dtypes.Data(size='s')),
+        NodeInputType('wire', type_='data'),
+        NodeInputType('radius', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -979,13 +979,13 @@ class Box_Node(BrepPrimAPINodeBase):
     title = 'box'
 
     init_inputs = [
-        NodeInputBP('w', dtype=dtypes.Data(size='s')),
-        NodeInputBP('l', dtype=dtypes.Data(size='s')),
-        NodeInputBP('h', dtype=dtypes.Data(size='s')),
+        NodeInputType('w', type_='data'),
+        NodeInputType('l', type_='data'),
+        NodeInputType('h', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1004,12 +1004,12 @@ class Sphere_Node(BrepPrimAPINodeBase):
     title = 'sphere'
 
     init_inputs = [
-        NodeInputBP('point', dtype=dtypes.Data(size='s')),
-        NodeInputBP('radius', dtype=dtypes.Data(size='s')),
+        NodeInputType('point', type_='data'),
+        NodeInputType('radius', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1029,13 +1029,13 @@ class Cylinder_Node(BrepPrimAPINodeBase):
     title = 'cylinder'
 
     init_inputs = [
-        NodeInputBP('axe', dtype=dtypes.Data(size='s')),
-        NodeInputBP('radius', dtype=dtypes.Data(size='s')),
-        NodeInputBP('len', dtype=dtypes.Data(size='s')),
+        NodeInputType('axe', type_='data'),
+        NodeInputType('radius', type_='data'),
+        NodeInputType('len', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1054,13 +1054,13 @@ class Torus_Node(BrepPrimAPINodeBase):
     title = 'torus'
 
     init_inputs = [
-        NodeInputBP('axe', dtype=dtypes.Data(size='s')),
-        NodeInputBP('distance', dtype=dtypes.Data(size='s')),
-        NodeInputBP('radius', dtype=dtypes.Data(size='s')),
+        NodeInputType('axe', type_='data'),
+        NodeInputType('distance', type_='data'),
+        NodeInputType('radius', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1097,11 +1097,11 @@ class Fuse_Node(BrepAlgoAPINodeBase):
     title = 'fuse'
 
     init_inputs = [
-        NodeInputBP('a', dtype=dtypes.Data(size='s')),
-        NodeInputBP('b', dtype=dtypes.Data(size='s')),
+        NodeInputType('a', type_='data'),
+        NodeInputType('b', type_='data'),
     ]
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1130,11 +1130,11 @@ class Common_Node(BrepAlgoAPINodeBase):
     title = 'common'
 
     init_inputs = [
-        NodeInputBP('a', dtype=dtypes.Data(size='s')),
-        NodeInputBP('b', dtype=dtypes.Data(size='s')),
+        NodeInputType('a', type_='data'),
+        NodeInputType('b', type_='data'),
     ]
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1153,11 +1153,11 @@ class Cut_Node(BrepAlgoAPINodeBase):
     title = 'cut'
 
     init_inputs = [
-        NodeInputBP('Basis', dtype=dtypes.Data(size='s')),
-        NodeInputBP('Cutter', dtype=dtypes.Data(size='s')),
+        NodeInputType('Basis', type_='data'),
+        NodeInputType('Cutter', type_='data'),
     ]
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1190,11 +1190,11 @@ class Section_Node(BrepAlgoAPINodeBase):
     title = 'section'
 
     init_inputs = [
-        NodeInputBP('Basis', dtype=dtypes.Data(size='s')),
-        NodeInputBP('Cutter', dtype=dtypes.Data(size='s')),
+        NodeInputType('Basis', type_='data'),
+        NodeInputType('Cutter', type_='data'),
     ]
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1247,11 +1247,11 @@ class Fillet_Node(BrepFilletAPINodeBase):
     title = 'fillet'
 
     init_inputs = [
-        NodeInputBP('shape', dtype=dtypes.Data(size='s')),
-        NodeInputBP('radius', dtype=dtypes.Data(size='s')),
+        NodeInputType('shape', type_='data'),
+        NodeInputType('radius', type_='data'),
     ]
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1293,11 +1293,11 @@ class Circle_Node(GeomNodeBase):
     title = 'Circle'
 
     init_inputs = [
-        NodeInputBP('Ax2', dtype=dtypes.Data(size='s')),
-        NodeInputBP('Radius', dtype=dtypes.Data(size='s')),
+        NodeInputType('Ax2', type_='data'),
+        NodeInputType('Radius', type_='data'),
     ]
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1326,10 +1326,10 @@ class PointsSurface_Node(GeomAPINodeBase):
     title = 'PointsSurface'
 
     init_inputs = [
-        NodeInputBP('points', dtype=dtypes.Data(size='s')),
+        NodeInputType('points', type_='data'),
     ]
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1370,17 +1370,17 @@ class TopExplorer_Node(PythonOCCNodeBase):
     color = '#FF00FF'
 
     init_inputs = [
-        NodeInputBP('shape', dtype=dtypes.Data(size='s')),
+        NodeInputType('shape', type_='data'),
     ]
     init_outputs = [
-        NodeOutputBP('vertex'),
-        NodeOutputBP('edges'),
-        NodeOutputBP('wires'),
-        NodeOutputBP('faces'),
-        NodeOutputBP('shells'),
-        NodeOutputBP('solids'),
-        NodeOutputBP('compounds'),
-        NodeOutputBP('compsolids'),
+        NodeOutputType('vertex'),
+        NodeOutputType('edges'),
+        NodeOutputType('wires'),
+        NodeOutputType('faces'),
+        NodeOutputType('shells'),
+        NodeOutputType('solids'),
+        NodeOutputType('compounds'),
+        NodeOutputType('compsolids'),
     ]
 
     def update_event(self, inp=-1):
@@ -1473,10 +1473,10 @@ class BoundingBox_Node(PythonOCCNodeBase):
     color = '#FF00FF'
 
     init_inputs = [
-        NodeInputBP('shape', dtype=dtypes.Data(size='s')),
+        NodeInputType('shape', type_='data'),
     ]
     init_outputs = [
-        NodeOutputBP('box'),
+        NodeOutputType('box'),
     ]
 
     def update_event(self, inp=-1):
@@ -1512,7 +1512,7 @@ class Display_Node(DisplayNodeBase):
     title = 'display'
 
     init_inputs = [
-        NodeInputBP('shapes', dtype=dtypes.Data(size='s')),
+        NodeInputType('shapes', type_='data'),
     ]
 
     def update_event(self, inp=-1):
@@ -1557,11 +1557,11 @@ class Color_Node(DisplayNodeBase):
     title = 'color'
 
     init_inputs = [
-        NodeInputBP('shape', dtype=dtypes.Data(size='s')),
-        NodeInputBP('Int', dtype=dtypes.Data(size='s')),
+        NodeInputType('shape', type_='data'),
+        NodeInputType('Int', type_='data'),
     ]
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1600,12 +1600,12 @@ class List_Node(PythonOCCNodeBase_DynamicInputs):
     color = '#000000'
 
     init_inputs = [
-        NodeInputBP(dtype=dtypes.Data(size='s')),
-        NodeInputBP(dtype=dtypes.Data(size='s')),
+        NodeInputType(type_='data'),
+        NodeInputType(type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def apply_op(self, elements: list):
@@ -1623,11 +1623,11 @@ class ListLength_Node(PythonOCCNodeBase):
     color = '#000000'
 
     init_inputs = [
-        NodeInputBP('list', dtype=dtypes.Data(size='s')),
+        NodeInputType('list', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1650,11 +1650,11 @@ class FlattenList_Node(PythonOCCNodeBase):
     color = '#000000'
 
     init_inputs = [
-        NodeInputBP('list', dtype=dtypes.Data(size='s')),
+        NodeInputType('list', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1684,12 +1684,12 @@ class ListItem_Node(PythonOCCNodeBase):
     color = '#000000'
 
     init_inputs = [
-        NodeInputBP('list', dtype=dtypes.Data(size='s')),
-        NodeInputBP('index', dtype=dtypes.Data(size='s')),
+        NodeInputType('list', type_='data'),
+        NodeInputType('index', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1709,12 +1709,12 @@ class RepeatData_Node(PythonOCCNodeBase):
     color = '#000000'
 
     init_inputs = [
-        NodeInputBP('Data', dtype=dtypes.Data(size='s')),
-        NodeInputBP('Length', dtype=dtypes.Data(size='s')),
+        NodeInputType('Data', type_='data'),
+        NodeInputType('Length', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1742,13 +1742,13 @@ class Serie_Node(PythonOCCNodeBase):
     color = '#000000'
 
     init_inputs = [
-        NodeInputBP('Start', dtype=dtypes.Data(size='s')),
-        NodeInputBP('Step', dtype=dtypes.Data(size='s')),
-        NodeInputBP('Length', dtype=dtypes.Data(size='s')),
+        NodeInputType('Start', type_='data'),
+        NodeInputType('Step', type_='data'),
+        NodeInputType('Length', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1773,12 +1773,12 @@ class ShiftList_Node(PythonOCCNodeBase):
     color = '#000000'
 
     init_inputs = [
-        NodeInputBP('List', dtype=dtypes.Data(size='s')),
-        NodeInputBP('ShiftValue', dtype=dtypes.Data(size='s')),
+        NodeInputType('List', type_='data'),
+        NodeInputType('ShiftValue', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1824,12 +1824,12 @@ class ExportStep_Node(DataExchangeNodeBase):
     title = 'ExportStep'
 
     init_inputs = [
-        NodeInputBP('shape', dtype=dtypes.Data(size='s')),
-        NodeInputBP('fname', dtype=dtypes.Data(size='s')),
+        NodeInputType('shape', type_='data'),
+        NodeInputType('fname', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1848,7 +1848,7 @@ class ImportStep_Node(DataExchangeNodeBase):
     title = 'ImportStep'
     doc = 'returns the evaluated text that is typed into the input field'
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
     main_widget_class = widgets.ImportFileNode_MainWidget
     main_widget_pos = 'between ports'
@@ -1910,12 +1910,12 @@ class ExportStl_Node(DataExchangeNodeBase):
     title = 'ExportStl'
 
     init_inputs = [
-        NodeInputBP('shape', dtype=dtypes.Data(size='s')),
-        NodeInputBP('name', dtype=dtypes.Data(size='s')),
+        NodeInputType('shape', type_='data'),
+        NodeInputType('name', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -1932,7 +1932,7 @@ class ImportStl_Node(DataExchangeNodeBase):
     title = 'ImportStl'
     doc = 'returns the evaluated text that is typed into the input field'
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
     main_widget_class = widgets.ImportFileNode_MainWidget
     main_widget_pos = 'between ports'
@@ -1994,13 +1994,13 @@ class ExportGcode_Node(DataExchangeNodeBase):
     title = 'ExportGcode'
 
     init_inputs = [
-        NodeInputBP('points', dtype=dtypes.Data(size='s')),
-        NodeInputBP('name', dtype=dtypes.Data(size='s')),
-        NodeInputBP('speed', dtype=dtypes.Data(size='s')),
+        NodeInputType('points', type_='data'),
+        NodeInputType('name', type_='data'),
+        NodeInputType('speed', type_='data'),
     ]
 
     init_outputs = [
-        NodeOutputBP(),
+        NodeOutputType(),
     ]
 
     def update_event(self, inp=-1):
@@ -2022,7 +2022,7 @@ DataExchange_nodes = [
 # -------------------------------------------
 
 
-export_nodes(
+export_nodes([
     *Gp_nodes,
     *BRepBuilderAPI_nodes,
     *BRepOffsetAPI_nodes,
@@ -2035,4 +2035,4 @@ export_nodes(
     *Display_nodes,
     *Tools_nodes,
     *DataExchange_nodes,
-)
+])
