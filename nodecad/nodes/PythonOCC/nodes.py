@@ -178,7 +178,7 @@ add_function_to_menu('Screenshot', Save_Screenshot)
 class PythonOCCNodeBase(Node):
 
     def get_inputs(self):
-        return (self.input(i) for i in range(len(self.inputs)))
+        return (self.input(i).payload for i in range(len(self.inputs)))
 
 
 class PythonOCCNodeBase_DynamicInputs(PythonOCCNodeBase):
@@ -256,7 +256,7 @@ class Pnt_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         x, y, z = self.clean(self.get_inputs())
-        self.set_output_val(0, gp_Pnt(x, y, z))
+        self.set_output_val(0, Data(gp_Pnt(x, y, z)))
 
     def clean(self, coords):
         """Returns a tuple of coords where `None` values are replaced by 0"""
@@ -276,7 +276,7 @@ class PointZero_Node(GpNodeBase):
 
     def place_event(self):
         point = gp_Pnt(0,0,0)
-        self.set_output_val(0, point)
+        self.set_output_val(0, Data(point))
 
 
 class DeconstructPnt_Node(GpNodeBase):
@@ -299,7 +299,7 @@ class DeconstructPnt_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         for point in self.get_inputs():
-            self.set_output_val(0, point.X())
+            self.set_output_val(0, Data(point.X()))
             self.set_output_val(1, point.Y())
             self.set_output_val(2, point.Z())
 
@@ -326,7 +326,7 @@ class Vec_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         x, y, z = self.get_inputs()
-        self.set_output_val(0, gp_Vec(x, y, z))
+        self.set_output_val(0, Data(gp_Vec(x, y, z)))
 
 
 class DX_Node(GpNodeBase):
@@ -342,7 +342,7 @@ class DX_Node(GpNodeBase):
 
     def place_event(self):
         dx = gp_DX()
-        self.set_output_val(0, dx)
+        self.set_output_val(0, Data(dx))
 
 
 class DY_Node(GpNodeBase):
@@ -358,7 +358,7 @@ class DY_Node(GpNodeBase):
 
     def place_event(self):
         dy = gp_DY()
-        self.set_output_val(0, dy)
+        self.set_output_val(0, Data(dy))
 
 
 class DZ_Node(GpNodeBase):
@@ -374,7 +374,7 @@ class DZ_Node(GpNodeBase):
 
     def place_event(self):
         dz = gp_DZ()
-        self.set_output_val(0, dz)
+        self.set_output_val(0, Data(dz))
 
 
 class Dir_Node(GpNodeBase):
@@ -399,7 +399,7 @@ class Dir_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         x, y, z = self.get_inputs()
-        self.set_output_val(0, gp_Dir(x, y, z))
+        self.set_output_val(0, Data(gp_Dir(x, y, z)))
 
 
 class Ax2_Node(GpNodeBase):
@@ -422,7 +422,7 @@ class Ax2_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         point, dir_ = self.get_inputs()
-        self.set_output_val(0, gp_Ax2(point, dir_))
+        self.set_output_val(0, Data(gp_Ax2(point, dir_)))
 
 class XOY_Node(GpNodeBase):
     """
@@ -437,7 +437,7 @@ class XOY_Node(GpNodeBase):
 
     def place_event(self):
         axz = gp_XOY()
-        self.set_output_val(0, axz)
+        self.set_output_val(0, Data(axz))
 
 class YOZ_Node(GpNodeBase):
     """
@@ -452,7 +452,7 @@ class YOZ_Node(GpNodeBase):
 
     def place_event(self):
         axx = gp_YOZ()
-        self.set_output_val(0, axx)
+        self.set_output_val(0, Data(axx))
 
 class ZOX_Node(GpNodeBase):
     """
@@ -467,7 +467,7 @@ class ZOX_Node(GpNodeBase):
 
     def place_event(self):
         axy = gp_ZOX()
-        self.set_output_val(0, axy)
+        self.set_output_val(0, Data(axy))
 
 class Pln_Node(GpNodeBase):
     """
@@ -489,7 +489,7 @@ class Pln_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         point, dir_ = self.get_inputs()
-        self.set_output_val(0, gp_Pln(point, dir_))
+        self.set_output_val(0, Data(gp_Pln(point, dir_)))
 
 
 class Trsf_Node(GpNodeBase):
@@ -525,7 +525,7 @@ class Trsf_Node(GpNodeBase):
                 else:
                     translated = BRepBuilderAPI_Transform(sh, trns).Shape()
                 result.append(translated)
-            self.set_output_val(0, result)
+            self.set_output_val(0, Data(result))
         
         elif isinstance(shapes, list) and not isinstance(vectors, list):
             for sh in (shapes):
@@ -538,7 +538,7 @@ class Trsf_Node(GpNodeBase):
                 else:
                     translated = BRepBuilderAPI_Transform(sh, trns).Shape()
                 result.append(translated)
-            self.set_output_val(0, result)
+            self.set_output_val(0, Data(result))
         
         elif not isinstance(shapes, list) and isinstance(vectors, list):
             for v in (vectors):
@@ -551,7 +551,7 @@ class Trsf_Node(GpNodeBase):
                 else:
                     translated = BRepBuilderAPI_Transform(shapes, trns).Shape()
                 result.append(translated)
-            self.set_output_val(0, result)
+            self.set_output_val(0, Data(result))
         
         else:
             trns = gp_Trsf()
@@ -562,7 +562,7 @@ class Trsf_Node(GpNodeBase):
                 translated = sh2
             else:
                 translated = BRepBuilderAPI_Transform(shapes, trns).Shape()
-            self.set_output_val(0, translated)
+            self.set_output_val(0, Data(translated))
 
 
 class Move2pts_Node(GpNodeBase):
@@ -602,7 +602,7 @@ class Move2pts_Node(GpNodeBase):
                 trns.SetTranslation(v.Reversed())
                 translated = BRepBuilderAPI_Transform(sh, trns).Shape()
                 result.append(translated)
-            self.set_output_val(0, result)
+            self.set_output_val(0, Data(result))
         
         else:
             v = gp_Vec()
@@ -613,7 +613,7 @@ class Move2pts_Node(GpNodeBase):
             trns = gp_Trsf()
             trns.SetTranslation(v.Reversed())
             translated = BRepBuilderAPI_Transform(shapes, trns).Shape()
-            self.set_output_val(0, translated)
+            self.set_output_val(0, Data(translated))
 
 
 class MidPoint_Node(GpNodeBase):
@@ -640,7 +640,7 @@ class MidPoint_Node(GpNodeBase):
         vec2 = gp_Vec(pointB.XYZ())
         midvec = (vec1 + vec2) / 2.
         midpoint = gp_Pnt(midvec.XYZ())
-        self.set_output_val(0, midpoint)
+        self.set_output_val(0, Data(midpoint))
 
 
 class Get_dir_from_edge_Node(GpNodeBase):
@@ -666,7 +666,7 @@ class Get_dir_from_edge_Node(GpNodeBase):
             last_point = BRep_Tool.Pnt(edg.last_vertex())
             dir_edge = gp_Dir(last_point.X() - first_point.X(), last_point.Y() - first_point.Y(),
                               last_point.Z() - first_point.Z())
-        self.set_output_val(0, dir_edge)
+        self.set_output_val(0, Data(dir_edge))
 
 
 Gp_nodes = [
@@ -726,11 +726,11 @@ class TwoPtsEdge_Node(BrepBuilderAPINodeBase):
             for p1, p2 in zip(pnt1, pnt2):
                 edge = BRepBuilderAPI_MakeEdge(p1, p2).Edge()
                 edges.append(edge)
-            self.set_output_val(0, edges)
+            self.set_output_val(0, Data(edges))
         
         else:
             edge = BRepBuilderAPI_MakeEdge(pnt1, pnt2).Edge()
-            self.set_output_val(0, edge)
+            self.set_output_val(0, Data(edge))
 
 
 class Wire_Node(BrepBuilderAPINodeBase):
@@ -760,7 +760,7 @@ class Wire_Node(BrepBuilderAPINodeBase):
                 edgepoint = BRepBuilderAPI_MakeEdge(pointsarray.Value(i), pointsarray.Value(i + 1)).Edge()
                 wirebuild.Add(edgepoint)
         
-        self.set_output_val(0, wirebuild.Shape())
+        self.set_output_val(0, Data(wirebuild.Shape()))
 
 
 class WireFillet2d_Node(BrepBuilderAPINodeBase):
@@ -807,7 +807,7 @@ class WireFillet2d_Node(BrepBuilderAPINodeBase):
             wirebuild.Add(fillet)
 
         wirebuild.Add(edges_list[-1])
-        self.set_output_val(0, wirebuild.Shape())
+        self.set_output_val(0, Data(wirebuild.Shape()))
 
 
 class DiscretizeWire_Node(BrepBuilderAPINodeBase):
@@ -840,7 +840,7 @@ class DiscretizeWire_Node(BrepBuilderAPINodeBase):
         if npts.IsDone():
             for i in range(1, npts.NbPoints() + 1):
                 pnts.append(curve_adapt.Value(npts.Parameter(i)))
-        self.set_output_val(0, pnts)
+        self.set_output_val(0, Data(pnts))
         # print(tmp)
 
 class CurveLength_Node(BrepBuilderAPINodeBase):
@@ -863,7 +863,7 @@ class CurveLength_Node(BrepBuilderAPINodeBase):
         lengths = []
         for curve in self.get_inputs():
             lengths.append(curve_length(curve))
-        self.set_output_val(0, lengths)
+        self.set_output_val(0, Data(lengths))
         # print(tmp)
 
 
@@ -929,7 +929,7 @@ class Pipe_Node(BrepOffsetAPINodeBase):
                 profile_face = BRepBuilderAPI_MakeFace(profile_wire).Face()
                 pipe = BRepOffsetAPI_MakePipe(w, profile_face).Shape()
                 pipes.append(pipe)
-            self.set_output_val(0, pipes)
+            self.set_output_val(0, Data(pipes))
        
         else:
             if isinstance(wire, TopoDS_Edge):
@@ -950,7 +950,7 @@ class Pipe_Node(BrepOffsetAPINodeBase):
             profile_wire = BRepBuilderAPI_MakeWire(profile_edge).Wire()
             profile_face = BRepBuilderAPI_MakeFace(profile_wire).Face()
             pipe = BRepOffsetAPI_MakePipe(wire, profile_face).Shape()
-            self.set_output_val(0, pipe)
+            self.set_output_val(0, Data(pipe))
 
 
 BRepOffsetAPI_nodes = [
@@ -991,7 +991,7 @@ class Box_Node(BrepPrimAPINodeBase):
     def update_event(self, inp=-1):
         width, length, height = self.get_inputs()
         box = BRepPrimAPI_MakeBox(gp_Pnt(), width, length, height).Shape()
-        self.set_output_val(0, box)
+        self.set_output_val(0, Data(box))
 
 
 class Sphere_Node(BrepPrimAPINodeBase):
@@ -1015,7 +1015,7 @@ class Sphere_Node(BrepPrimAPINodeBase):
     def update_event(self, inp=-1):
         point, radius = self.get_inputs()
         sphere = BRepPrimAPI_MakeSphere(point, radius).Shape()
-        self.set_output_val(0, sphere)
+        self.set_output_val(0, Data(sphere))
 
 
 class Cylinder_Node(BrepPrimAPINodeBase):
@@ -1041,7 +1041,7 @@ class Cylinder_Node(BrepPrimAPINodeBase):
     def update_event(self, inp=-1):
         axe, radius, length = self.get_inputs()
         cylinder = BRepPrimAPI_MakeCylinder(axe, radius, length).Shape()
-        self.set_output_val(0, cylinder)
+        self.set_output_val(0, Data(cylinder))
 
 class Torus_Node(BrepPrimAPINodeBase):
     """
@@ -1066,8 +1066,7 @@ class Torus_Node(BrepPrimAPINodeBase):
     def update_event(self, inp=-1):
         axe, distance, radius = self.get_inputs()
         torus = BRepPrimAPI_MakeTorus(axe, distance, radius).Shape()
-        self.set_output_val(0, torus)
-
+        self.set_output_val(0, Data(torus))
 
 BRepPrimAPI_nodes = [
     Box_Node,
@@ -1114,10 +1113,10 @@ class Fuse_Node(BrepAlgoAPINodeBase):
             for i in range(2, count):
                 ijk += 1
                 fuse_shps[ijk] = BRepAlgoAPI_Fuse(fuse_shps[ijk-1], a[i]).Shape()
-            self.set_output_val(0, fuse_shps[ijk])
+            self.set_output_val(0, Data(fuse_shps[ijk]))
         else:
             fuse_shp = BRepAlgoAPI_Fuse(a, b).Shape()
-            self.set_output_val(0, fuse_shp)
+            self.set_output_val(0, Data(fuse_shp))
 
 
 class Common_Node(BrepAlgoAPINodeBase):
@@ -1140,7 +1139,7 @@ class Common_Node(BrepAlgoAPINodeBase):
     def update_event(self, inp=-1):
         a, b = self.get_inputs()
         common_shp = BRepAlgoAPI_Common(a, b).Shape()
-        self.set_output_val(0, common_shp)
+        self.set_output_val(0, Data(common_shp))
 
 
 class Cut_Node(BrepAlgoAPINodeBase):
@@ -1170,15 +1169,15 @@ class Cut_Node(BrepAlgoAPINodeBase):
             for i in range(1, count):
                 ijk += 1
                 cut_shps[ijk] = BRepAlgoAPI_Cut(cut_shps[ijk - 1], cutter[i]).Shape()
-            self.set_output_val(0, cut_shps[ijk])
+            self.set_output_val(0, Data(cut_shps[ijk]))
         elif type(basis) is list and type(cutter) is not list:
             cut_shps = []
             for b in basis:
                 cut_shps.append(BRepAlgoAPI_Cut(b, cutter).Shape())
-            self.set_output_val(0, cut_shps)
+            self.set_output_val(0, Data(cut_shps))
         else:
             cut_shp = BRepAlgoAPI_Cut(basis, cutter).Shape()
-            self.set_output_val(0, cut_shp)
+            self.set_output_val(0, Data(cut_shp))
 
 class Section_Node(BrepAlgoAPINodeBase):
     """
@@ -1208,15 +1207,15 @@ class Section_Node(BrepAlgoAPINodeBase):
                 for i in range(1, count):
                     ijk += 1
                     cut_shps[ijk] = BRepAlgoAPI_Section(cut_shps[ijk - 1], cutter[i]).Shape()
-                self.set_output_val(0, cut_shps[ijk])
+                self.set_output_val(0, Data(cut_shps[ijk]))
             elif type(basis) is list and type(cutter) is not list:
                 cut_shps = []
                 for b in basis:
                     cut_shps.append(BRepAlgoAPI_Section(b, cutter).Shape())
-                self.set_output_val(0, cut_shps)
+                self.set_output_val(0, Data(cut_shps))
             else:
                 cut_shp = BRepAlgoAPI_Section(basis, cutter).Shape()
-                self.set_output_val(0, cut_shp)
+                self.set_output_val(0, Data(cut_shp))
 
 
 BRepAlgoAPI_nodes = [
@@ -1267,7 +1266,7 @@ class Fillet_Node(BrepFilletAPINodeBase):
 
         blended_fused_solids = fill.Shape()
 
-        self.set_output_val(0, blended_fused_solids)
+        self.set_output_val(0, Data(blended_fused_solids))
 
 
 BRepFilletAPI_nodes = [
@@ -1303,7 +1302,7 @@ class Circle_Node(GeomNodeBase):
     def update_event(self, inp=-1):
         axis, radius  = self.get_inputs()
         circle = Geom_Circle(axis, radius)
-        self.set_output_val(0, circle)
+        self.set_output_val(0, Data(circle))
 
 Geom_nodes = [
     Circle_Node,
@@ -1346,7 +1345,7 @@ class PointsSurface_Node(GeomAPINodeBase):
                 print(pts[c][n])
                 array.SetValue(n + 1, c + 1, pts[c][n])
         nurbs = GeomAPI_PointsToBSplineSurface(array, 2, 2, GeomAbs_C2, 0.001).Surface()
-        self.set_output_val(0, nurbs)
+        self.set_output_val(0, Data(nurbs))
 
 
 GeomAPI_nodes = [
@@ -1452,7 +1451,7 @@ class TopExplorer_Node(PythonOCCNodeBase):
                 compsolids.append(compsolid)
                 topexp_compsolid.Next()
 
-        self.set_output_val(0, vertices_red)
+        self.set_output_val(0, Data(vertices_red))
         self.set_output_val(1, edges)
         self.set_output_val(2, wires)
         self.set_output_val(3, faces)
@@ -1484,7 +1483,7 @@ class BoundingBox_Node(PythonOCCNodeBase):
         for shape in self.get_inputs():
             aBaryCenter, [aHalfX, aHalfY, aHalfZ], aBox = get_oriented_boundingbox(shape)
             bboxes.append(aBox)
-        self.set_output_val(0, bboxes)  # TODO make it work for list
+        self.set_output_val(0, Data(bboxes))  # TODO make it work for list
 
 
 Shape_Analysis_nodes = [
@@ -1570,11 +1569,11 @@ class Color_Node(DisplayNodeBase):
         if type(shape) is list:
             for shp in shape:
                 shapecolored.append([shp, colore])
-                self.set_output_val(0, shapecolored)
+                self.set_output_val(0, Data(shapecolored))
         else:
             shapecolored.append(shape)
             shapecolored.append(colore)
-            self.set_output_val(0, shapecolored)
+            self.set_output_val(0, Data(shapecolored))
 
 
 Display_nodes = [
@@ -1634,7 +1633,7 @@ class ListLength_Node(PythonOCCNodeBase):
         for el in self.get_inputs():
             if type(el) is list:
                 length = len(el)
-                self.set_output_val(0, length)
+                self.set_output_val(0, Data(length))
             else :
                 pass
 
@@ -1694,7 +1693,7 @@ class ListItem_Node(PythonOCCNodeBase):
 
     def update_event(self, inp=-1):
         reflist, index = self.get_inputs()
-        self.set_output_val(0, reflist[index])
+        self.set_output_val(0, Data(reflist[index]))
 
 
 class RepeatData_Node(PythonOCCNodeBase):
@@ -1718,15 +1717,15 @@ class RepeatData_Node(PythonOCCNodeBase):
     ]
 
     def update_event(self, inp=-1):
-        Data, Length = self.get_inputs()
+        İnfo, Length = self.get_inputs()
         repeat = []
         for l in range(Length):
-            if type(Data) is list:
-                for d in Data:
+            if type(İnfo) is list:
+                for d in İnfo:
                     repeat.append(d)
             else:
-                repeat.append(Data)
-        self.set_output_val(0, repeat)
+                repeat.append(İnfo)
+        self.set_output_val(0, Data(repeat))
 
 
 class Serie_Node(PythonOCCNodeBase):
@@ -1759,7 +1758,7 @@ class Serie_Node(PythonOCCNodeBase):
         for l in range(Length-1):
             count += Step
             serie.append(count)
-        self.set_output_val(0, serie)
+        self.set_output_val(0, Data(serie))
 
 class ShiftList_Node(PythonOCCNodeBase):
     """
@@ -1790,7 +1789,7 @@ class ShiftList_Node(PythonOCCNodeBase):
         elif value > 0:
             for i in range(value, len(list_)):
                 shifted_list.append(list_[i])
-        self.set_output_val(0, shifted_list)
+        self.set_output_val(0, Data(shifted_list))
 
 
 Tools_nodes = [
@@ -1873,7 +1872,7 @@ class ImportStep_Node(DataExchangeNodeBase):
 
     def update_event(self, input_called=-1):
         shape = read_step_file(self.string)
-        self.set_output_val(0, shape)
+        self.set_output_val(0, Data(shape))
 
     def action_edit_via_dialog(self):
         return
@@ -1957,7 +1956,7 @@ class ImportStl_Node(DataExchangeNodeBase):
 
     def update_event(self, input_called=-1):
         shape = read_stl_file(self.string)
-        self.set_output_val(0, shape)
+        self.set_output_val(0, Data(shape))
 
     def action_edit_via_dialog(self):
         return
