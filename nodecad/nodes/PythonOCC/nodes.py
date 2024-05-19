@@ -325,6 +325,11 @@ class Pnt_Node(GpNodeBase):
         return ( (c if c is not None else 0) for c in coords )
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+    'DataSmall',
+])
 class PointZero_Node(GpNodeBase):
     """
     Generates Point Zero__-
@@ -332,7 +337,7 @@ class PointZero_Node(GpNodeBase):
 
     title = 'Point0'
 
-    init_inputs = []
+    init_inputs = [NodeInputType(type_='exec')]
     
     init_outputs = [
         NodeOutputType(),
@@ -343,9 +348,6 @@ class PointZero_Node(GpNodeBase):
         self.set_output_val(0, OCCData(point))
 
 
-@attach_input_widgets([
-    'DataSmall',
-])
 class DeconstructPnt_Node(GpNodeBase):
     """
     Deconstruct Point_____-
@@ -401,6 +403,11 @@ class Vec_Node(GpNodeBase):
         self.set_output_val(0, OCCData(gp_Vec(x, y, z)))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+    'DataSmall',
+])
 class DX_Node(GpNodeBase):
     """
     Generates Dir X____-
@@ -408,6 +415,8 @@ class DX_Node(GpNodeBase):
 
     title = 'DirX'
 
+    init_inputs = [NodeInputType(type_='exec')]
+    
     init_outputs = [
         NodeOutputType(),
     ]
@@ -424,6 +433,8 @@ class DY_Node(GpNodeBase):
 
     title = 'DirY'
 
+    init_inputs = [NodeInputType(type_='exec')]
+    
     init_outputs = [
         NodeOutputType(),
     ]
@@ -440,6 +451,8 @@ class DZ_Node(GpNodeBase):
 
     title = 'DirZ'
 
+    init_inputs = [NodeInputType(type_='exec')]
+    
     init_outputs = [
         NodeOutputType(),
     ]
@@ -449,11 +462,6 @@ class DZ_Node(GpNodeBase):
         self.set_output_val(0, OCCData(dz))
 
 
-@attach_input_widgets([
-    'DataSmall',
-    'DataSmall',
-    'DataSmall',
-])
 class Dir_Node(GpNodeBase):
     """
     Generates Dir_______-
@@ -512,6 +520,8 @@ class XOY_Node(GpNodeBase):
 
     title = 'AxZ'
 
+    init_inputs = [NodeInputType(type_='exec')]
+    
     init_outputs = [
         NodeOutputType(),
     ]
@@ -527,6 +537,8 @@ class YOZ_Node(GpNodeBase):
 
     title = 'AxX'
 
+    init_inputs = [NodeInputType(type_='exec')]
+    
     init_outputs = [
         NodeOutputType(),
     ]
@@ -542,6 +554,8 @@ class ZOX_Node(GpNodeBase):
 
     title = 'AxY'
 
+    init_inputs = [NodeInputType(type_='exec')]
+    
     init_outputs = [
         NodeOutputType(),
     ]
@@ -550,10 +564,6 @@ class ZOX_Node(GpNodeBase):
         axy = gp_ZOX()
         self.set_output_val(0, OCCData(axy))
 
-@attach_input_widgets([
-    'DataSmall',
-    'DataSmall',
-])
 class Pln_Node(GpNodeBase):
     """
     Generates Plane_______-
@@ -842,6 +852,7 @@ class TwoPtsEdge_Node(BrepBuilderAPINodeBase):
 
 
 @attach_input_widgets([
+    'DataSmall',
     'DataSmall',
 ])
 class Wire_Node(BrepBuilderAPINodeBase):
@@ -2058,6 +2069,7 @@ class ImportStep_Node(DataExchangeNodeBase):
 
     title = 'ImportStep'
     doc = 'returns the evaluated text that is typed into the input field'
+
     init_outputs = [
         NodeOutputType(),
     ]
@@ -2130,6 +2142,7 @@ class ImportStl_Node(DataExchangeNodeBase):
 
     title = 'ImportStl'
     doc = 'returns the evaluated text that is typed into the input field'
+
     init_outputs = [
         NodeOutputType(),
     ]
