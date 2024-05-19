@@ -354,7 +354,7 @@ CONTROLS
     def focus_on_flow(self, flow):
         self.ui.flows_tab_widget.setCurrentWidget(self.flow_UIs[flow])
 
-    def import_packages(self, packages_list: [NodesPackage]):
+    def import_packages(self, packages_list: list[NodesPackage]):
         for p in packages_list:
             self.import_nodes(p)
 
