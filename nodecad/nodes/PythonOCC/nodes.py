@@ -1,6 +1,18 @@
 from ryven.node_env import *
 
-widgets = import_guis(__file__)
+guis = import_guis(__file__)
+
+# if ryven is runnign headless, there are no gui imports
+attach_input_widgets = \
+    guis.GuiBuilder.attach_input_widgets \
+    if guis.GuiBuilder is not None else \
+    lambda _: lambda cls: cls
+
+
+# 
+# PythonOCC imports
+# 
+
 
 from OCC.Core.ChFi2d import \
     ChFi2d_AnaFilletAlgo
@@ -113,7 +125,10 @@ from OCCUtils.Common import \
 from OCCUtils.edge import Edge
 
 
-# 3D Viewer ------------------------------------------
+# 
+# 3D Viewer
+# 
+
 
 from datetime import datetime
 from OCC.Display.SimpleGui import init_display
@@ -171,69 +186,114 @@ def Save_Screenshot():
 
 add_function_to_menu('Screenshot', Save_Screenshot)
 
-# -----------------------------------------------------
-# Base Classes
+
+# 
+# Data types
+# 
+
+
+class OCCData(Data):
+    """
+    Base class for all OCC data types passed between nodes.
+    """
+
+    # TODO: discuss data serialization approach
+
+    # PythonOCC doesn't support pickling, so we need to
+    # come up with a serialization approach.
+    # There are who options for data serialization here:
+    # 1. Explicitly define serialization of all OCC types passed
+    #   between nodes, to the point where it can be serialized
+    #   by pickele (e.g. dict). This is a lot of work.
+    # 2. Violate correct graph reconstruction by simply loading
+    #   any data into a placeholder e.g. `None`.
+    #   This means the graph is not reconstructed exactly as it 
+    #   was saved, all OCCData objects will lose their payload,
+    #   in particular all node output values will be useless.
+    #   But if the nodes are designed correctly and do not store
+    #   any state, by very few manual well chosen updates
+    #   the user can effectively reconstruct the graph.
+    #   For simplicity, this is the approach taken here for now.
+
+    def get_data(self):
+        return None
+    
+    def set_data(self, data):
+        pass
+
+
+# 
+# Node base classes
+# 
 
 
 class PythonOCCNodeBase(Node):
 
+    GUI = guis.PythonOCCNodeGuiBase
+
+    def inp(self, index):
+        """Convenience method to unpack input data if applicable."""
+        return self.input(index).payload if self.input(index) is not None else None
+
     def get_inputs(self):
+        """Convenience method to get a tuple of all (unpacked) input values."""
         return (self.input(i).payload for i in range(len(self.inputs)))
+
+    def have_gui(self):
+        # check if we are running with a GUI
+        # and not in headless mode
+        return hasattr(self, 'gui')
 
 
 class PythonOCCNodeBase_DynamicInputs(PythonOCCNodeBase):
 
-    def __init__(self, params):
-        super().__init__(params)
+    GUI = guis.PyOCCBase_DynamicInputsGui
 
-        self.num_inputs = 0
-    
-    def setup_actions(self):
-        self.actions = {}
-        self.actions['add input'] = {'method': self.add_operand_input}
-        self.actions['rem input'] = {}
+    num_init_inputs = 0
 
     def place_event(self):
-        self.setup_actions()
-        if 0 == self.num_inputs < len(self.inputs):
-            for i in range(len(self.inputs)):
-                self.register_new_operand_input(i)
+        for i in range(self.num_init_inputs):
+            if self.have_gui():
+                self.gui.add_operand_input()
+            else:
+                self.add_operand_input()
 
     def add_operand_input(self):
-        self.create_input_dt(type_='data')
-        self.register_new_operand_input(self.num_inputs)
+        # self.create_input_dt(dtype=dtypes.Data(size='s'))
+        # TODO: input widgets are currently only supported in initial inputs
+        # fallback:
+        self.create_input()
+
         self.update()
 
     def remove_operand_input(self, index):
         self.delete_input(index)
-        self.num_inputs -= 1
-        del self.actions['rem input'][f'{self.num_inputs}']
         self.update()
 
-    def register_new_operand_input(self, index):
-        self.actions['rem input'][f'{index}'] = {
-            'method': self.remove_operand_input,
-            'data': index
-        }
-        self.num_inputs += 1
-
     def update_event(self, inp=-1):
-        self.set_output_val(0, self.apply_op([self.input(i) for i in range(len(self.inputs))]))
+        self.set_output_val(0, OCCData(
+            self.apply_op([self.inp(i) for i in range(len(self.inputs))])
+        ))
 
     def apply_op(self, elements: list):
         return None
 
 
-# -------------------------------------------
-
-# GP ----------------------------------------
+# 
+# GP nodes
+# 
 
 
 class GpNodeBase(PythonOCCNodeBase):
     version = 'v0.1'
-    color = '#5e0a91'
+    GUI = guis.GpNodeGui
 
 
+@attach_input_widgets([
+    'DataSmall', 
+    'DataSmall', 
+    'DataSmall',
+])
 class Pnt_Node(GpNodeBase):
     """
     Generates Point_______-
@@ -245,9 +305,9 @@ class Pnt_Node(GpNodeBase):
     title = 'point'
 
     init_inputs = [
-        NodeInputType('x', type_='data'),
-        NodeInputType('y', type_='data'),
-        NodeInputType('z', type_='data'),
+        NodeInputType('x'),
+        NodeInputType('y'),
+        NodeInputType('z'),
     ]
 
     init_outputs = [
@@ -256,7 +316,9 @@ class Pnt_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         x, y, z = self.clean(self.get_inputs())
-        self.set_output_val(0, Data(gp_Pnt(x, y, z)))
+        self.set_output_val(0, OCCData(
+            gp_Pnt(x, y, z)
+        ))
 
     def clean(self, coords):
         """Returns a tuple of coords where `None` values are replaced by 0"""
@@ -270,15 +332,20 @@ class PointZero_Node(GpNodeBase):
 
     title = 'Point0'
 
+    init_inputs = []
+    
     init_outputs = [
         NodeOutputType(),
     ]
 
     def place_event(self):
         point = gp_Pnt(0,0,0)
-        self.set_output_val(0, Data(point))
+        self.set_output_val(0, OCCData(point))
 
 
+@attach_input_widgets([
+    'DataSmall',
+])
 class DeconstructPnt_Node(GpNodeBase):
     """
     Deconstruct Point_____-
@@ -288,7 +355,7 @@ class DeconstructPnt_Node(GpNodeBase):
     title = 'deconstruct point'
 
     init_inputs = [
-        NodeInputType('point', type_='data'),
+        NodeInputType('point'),
     ]
 
     init_outputs = [
@@ -299,11 +366,16 @@ class DeconstructPnt_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         for point in self.get_inputs():
-            self.set_output_val(0, Data(point.X()))
-            self.set_output_val(1, point.Y())
-            self.set_output_val(2, point.Z())
+            self.set_output_val(0, OCCData(point.X()))
+            self.set_output_val(1, OCCData(point.Y()))
+            self.set_output_val(2, OCCData(point.Z()))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+    'DataSmall',
+])
 class Vec_Node(GpNodeBase):
     """
     Generates Vector______-
@@ -315,9 +387,9 @@ class Vec_Node(GpNodeBase):
     title = 'Vector'
 
     init_inputs = [
-        NodeInputType('x', type_='data'),
-        NodeInputType('y', type_='data'),
-        NodeInputType('z', type_='data'),
+        NodeInputType('x'),
+        NodeInputType('y'),
+        NodeInputType('z'),
     ]
 
     init_outputs = [
@@ -326,7 +398,7 @@ class Vec_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         x, y, z = self.get_inputs()
-        self.set_output_val(0, Data(gp_Vec(x, y, z)))
+        self.set_output_val(0, OCCData(gp_Vec(x, y, z)))
 
 
 class DX_Node(GpNodeBase):
@@ -342,7 +414,7 @@ class DX_Node(GpNodeBase):
 
     def place_event(self):
         dx = gp_DX()
-        self.set_output_val(0, Data(dx))
+        self.set_output_val(0, OCCData(dx))
 
 
 class DY_Node(GpNodeBase):
@@ -358,7 +430,7 @@ class DY_Node(GpNodeBase):
 
     def place_event(self):
         dy = gp_DY()
-        self.set_output_val(0, Data(dy))
+        self.set_output_val(0, OCCData(dy))
 
 
 class DZ_Node(GpNodeBase):
@@ -374,9 +446,14 @@ class DZ_Node(GpNodeBase):
 
     def place_event(self):
         dz = gp_DZ()
-        self.set_output_val(0, Data(dz))
+        self.set_output_val(0, OCCData(dz))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+    'DataSmall',
+])
 class Dir_Node(GpNodeBase):
     """
     Generates Dir_______-
@@ -388,9 +465,9 @@ class Dir_Node(GpNodeBase):
     title = 'dir'
 
     init_inputs = [
-        NodeInputType('x', type_='data'),
-        NodeInputType('y', type_='data'),
-        NodeInputType('z', type_='data'),
+        NodeInputType('x'),
+        NodeInputType('y'),
+        NodeInputType('z'),
     ]
 
     init_outputs = [
@@ -399,9 +476,13 @@ class Dir_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         x, y, z = self.get_inputs()
-        self.set_output_val(0, Data(gp_Dir(x, y, z)))
+        self.set_output_val(0, OCCData(gp_Dir(x, y, z)))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Ax2_Node(GpNodeBase):
     """
     Generates Ax2_________-
@@ -412,8 +493,8 @@ class Ax2_Node(GpNodeBase):
     title = 'Ax2'
 
     init_inputs = [
-        NodeInputType('point', type_='data'),
-        NodeInputType('dir', type_='data'),
+        NodeInputType('point'),
+        NodeInputType('dir'),
     ]
 
     init_outputs = [
@@ -422,7 +503,7 @@ class Ax2_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         point, dir_ = self.get_inputs()
-        self.set_output_val(0, Data(gp_Ax2(point, dir_)))
+        self.set_output_val(0, OCCData(gp_Ax2(point, dir_)))
 
 class XOY_Node(GpNodeBase):
     """
@@ -437,7 +518,7 @@ class XOY_Node(GpNodeBase):
 
     def place_event(self):
         axz = gp_XOY()
-        self.set_output_val(0, Data(axz))
+        self.set_output_val(0, OCCData(axz))
 
 class YOZ_Node(GpNodeBase):
     """
@@ -452,7 +533,7 @@ class YOZ_Node(GpNodeBase):
 
     def place_event(self):
         axx = gp_YOZ()
-        self.set_output_val(0, Data(axx))
+        self.set_output_val(0, OCCData(axx))
 
 class ZOX_Node(GpNodeBase):
     """
@@ -467,8 +548,12 @@ class ZOX_Node(GpNodeBase):
 
     def place_event(self):
         axy = gp_ZOX()
-        self.set_output_val(0, Data(axy))
+        self.set_output_val(0, OCCData(axy))
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Pln_Node(GpNodeBase):
     """
     Generates Plane_______-
@@ -479,8 +564,8 @@ class Pln_Node(GpNodeBase):
     title = 'Plane'
 
     init_inputs = [
-        NodeInputType('point', type_='data'),
-        NodeInputType('dir', type_='data'),
+        NodeInputType('point'),
+        NodeInputType('dir'),
     ]
 
     init_outputs = [
@@ -489,9 +574,13 @@ class Pln_Node(GpNodeBase):
 
     def update_event(self, inp=-1):
         point, dir_ = self.get_inputs()
-        self.set_output_val(0, Data(gp_Pln(point, dir_)))
+        self.set_output_val(0, OCCData(gp_Pln(point, dir_)))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Trsf_Node(GpNodeBase):
     """
     Generates transform___-
@@ -502,8 +591,8 @@ class Trsf_Node(GpNodeBase):
     title = 'Transform'
 
     init_inputs = [
-        NodeInputType('shapes', type_='data'),
-        NodeInputType('vectors', type_='data'),
+        NodeInputType('shapes'),
+        NodeInputType('vectors'),
     ]
 
     init_outputs = [
@@ -525,7 +614,7 @@ class Trsf_Node(GpNodeBase):
                 else:
                     translated = BRepBuilderAPI_Transform(sh, trns).Shape()
                 result.append(translated)
-            self.set_output_val(0, Data(result))
+            self.set_output_val(0, OCCData(result))
         
         elif isinstance(shapes, list) and not isinstance(vectors, list):
             for sh in (shapes):
@@ -538,7 +627,7 @@ class Trsf_Node(GpNodeBase):
                 else:
                     translated = BRepBuilderAPI_Transform(sh, trns).Shape()
                 result.append(translated)
-            self.set_output_val(0, Data(result))
+            self.set_output_val(0, OCCData(result))
         
         elif not isinstance(shapes, list) and isinstance(vectors, list):
             for v in (vectors):
@@ -551,7 +640,7 @@ class Trsf_Node(GpNodeBase):
                 else:
                     translated = BRepBuilderAPI_Transform(shapes, trns).Shape()
                 result.append(translated)
-            self.set_output_val(0, Data(result))
+            self.set_output_val(0, OCCData(result))
         
         else:
             trns = gp_Trsf()
@@ -562,9 +651,14 @@ class Trsf_Node(GpNodeBase):
                 translated = sh2
             else:
                 translated = BRepBuilderAPI_Transform(shapes, trns).Shape()
-            self.set_output_val(0, Data(translated))
+            self.set_output_val(0, OCCData(translated))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+    'DataSmall',
+])
 class Move2pts_Node(GpNodeBase):
     """
     Move 2 points_________-
@@ -575,9 +669,9 @@ class Move2pts_Node(GpNodeBase):
     title = 'Move2pnts'
 
     init_inputs = [
-        NodeInputType('shapes', type_='data'),
-        NodeInputType('from', type_='data'),
-        NodeInputType('to', type_='data'),
+        NodeInputType('shapes'),
+        NodeInputType('from'),
+        NodeInputType('to'),
     ]
 
     init_outputs = [
@@ -602,7 +696,7 @@ class Move2pts_Node(GpNodeBase):
                 trns.SetTranslation(v.Reversed())
                 translated = BRepBuilderAPI_Transform(sh, trns).Shape()
                 result.append(translated)
-            self.set_output_val(0, Data(result))
+            self.set_output_val(0, OCCData(result))
         
         else:
             v = gp_Vec()
@@ -613,9 +707,13 @@ class Move2pts_Node(GpNodeBase):
             trns = gp_Trsf()
             trns.SetTranslation(v.Reversed())
             translated = BRepBuilderAPI_Transform(shapes, trns).Shape()
-            self.set_output_val(0, Data(translated))
+            self.set_output_val(0, OCCData(translated))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class MidPoint_Node(GpNodeBase):
     """
     MidPoint_____________-
@@ -626,8 +724,8 @@ class MidPoint_Node(GpNodeBase):
     title = 'MidPoint'
 
     init_inputs = [
-        NodeInputType('pointA', type_='data'),
-        NodeInputType('pointB', type_='data'),
+        NodeInputType('pointA'),
+        NodeInputType('pointB'),
     ]
 
     init_outputs = [
@@ -640,9 +738,12 @@ class MidPoint_Node(GpNodeBase):
         vec2 = gp_Vec(pointB.XYZ())
         midvec = (vec1 + vec2) / 2.
         midpoint = gp_Pnt(midvec.XYZ())
-        self.set_output_val(0, Data(midpoint))
+        self.set_output_val(0, OCCData(midpoint))
 
 
+@attach_input_widgets([
+    'DataSmall',
+])
 class Get_dir_from_edge_Node(GpNodeBase):
     """
     Dir from Edge________-
@@ -652,7 +753,7 @@ class Get_dir_from_edge_Node(GpNodeBase):
     title = 'DirfromEdge'
 
     init_inputs = [
-        NodeInputType('Edge', type_='data'),
+        NodeInputType('Edge'),
     ]
 
     init_outputs = [
@@ -660,13 +761,16 @@ class Get_dir_from_edge_Node(GpNodeBase):
     ]
 
     def update_event(self, inp=-1):
+        print('ERROR - EDGE IS BROKEN')
+        return
+
         for edge in self.get_inputs():
             edg = Edge(edge)
             first_point = BRep_Tool.Pnt(edg.first_vertex())
             last_point = BRep_Tool.Pnt(edg.last_vertex())
             dir_edge = gp_Dir(last_point.X() - first_point.X(), last_point.Y() - first_point.Y(),
                               last_point.Z() - first_point.Z())
-        self.set_output_val(0, Data(dir_edge))
+        self.set_output_val(0, OCCData(dir_edge))
 
 
 Gp_nodes = [
@@ -690,16 +794,20 @@ Gp_nodes = [
 ]
 
 
-# -------------------------------------------
-
-# BREPBUILDERAPI-----------------------------
+# 
+# BrepBuilderAPI nodes
+# 
 
 
 class BrepBuilderAPINodeBase(PythonOCCNodeBase):
     version = 'v0.1'
-    color = '#DAA520'
+    GUI = guis.BrepBuilderAPINodeGui
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class TwoPtsEdge_Node(BrepBuilderAPINodeBase):
     """
     Generates 2 pts Edge__-
@@ -710,8 +818,8 @@ class TwoPtsEdge_Node(BrepBuilderAPINodeBase):
     title = '2ptsEdge'
 
     init_inputs = [
-        NodeInputType('pnt1', type_='data'),
-        NodeInputType('Pnt2', type_='data'),
+        NodeInputType('pnt1'),
+        NodeInputType('Pnt2'),
     ]
 
     init_outputs = [
@@ -726,13 +834,16 @@ class TwoPtsEdge_Node(BrepBuilderAPINodeBase):
             for p1, p2 in zip(pnt1, pnt2):
                 edge = BRepBuilderAPI_MakeEdge(p1, p2).Edge()
                 edges.append(edge)
-            self.set_output_val(0, Data(edges))
+            self.set_output_val(0, OCCData(edges))
         
         else:
             edge = BRepBuilderAPI_MakeEdge(pnt1, pnt2).Edge()
-            self.set_output_val(0, Data(edge))
+            self.set_output_val(0, OCCData(edge))
 
 
+@attach_input_widgets([
+    'DataSmall',
+])
 class Wire_Node(BrepBuilderAPINodeBase):
     """
     Generates Wire________-
@@ -742,7 +853,7 @@ class Wire_Node(BrepBuilderAPINodeBase):
     title = 'Wire'
 
     init_inputs = [
-        NodeInputType('pntslist', type_='data'),
+        NodeInputType('pntslist'),
     ]
 
     init_outputs = [
@@ -760,9 +871,13 @@ class Wire_Node(BrepBuilderAPINodeBase):
                 edgepoint = BRepBuilderAPI_MakeEdge(pointsarray.Value(i), pointsarray.Value(i + 1)).Edge()
                 wirebuild.Add(edgepoint)
         
-        self.set_output_val(0, Data(wirebuild.Shape()))
+        self.set_output_val(0, OCCData(wirebuild.Shape()))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class WireFillet2d_Node(BrepBuilderAPINodeBase):
     """
     Generates 2dWireFillet_-
@@ -773,8 +888,8 @@ class WireFillet2d_Node(BrepBuilderAPINodeBase):
     title = '2dWireFillet'
 
     init_inputs = [
-        NodeInputType('pntslist', type_='data'),
-        NodeInputType('radius', type_='data'),
+        NodeInputType('pntslist'),
+        NodeInputType('radius'),
     ]
 
     init_outputs = [
@@ -807,9 +922,13 @@ class WireFillet2d_Node(BrepBuilderAPINodeBase):
             wirebuild.Add(fillet)
 
         wirebuild.Add(edges_list[-1])
-        self.set_output_val(0, Data(wirebuild.Shape()))
+        self.set_output_val(0, OCCData(wirebuild.Shape()))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class DiscretizeWire_Node(BrepBuilderAPINodeBase):
     """
     Discretize Wire_______-
@@ -820,8 +939,8 @@ class DiscretizeWire_Node(BrepBuilderAPINodeBase):
     title = 'DiscretizeWire'
 
     init_inputs = [
-        NodeInputType('Wire', type_='data'),
-        NodeInputType('Nb', type_='data'),
+        NodeInputType('Wire'),
+        NodeInputType('Nb'),
     ]
 
     init_outputs = [
@@ -840,9 +959,12 @@ class DiscretizeWire_Node(BrepBuilderAPINodeBase):
         if npts.IsDone():
             for i in range(1, npts.NbPoints() + 1):
                 pnts.append(curve_adapt.Value(npts.Parameter(i)))
-        self.set_output_val(0, Data(pnts))
+        self.set_output_val(0, OCCData(pnts))
         # print(tmp)
 
+@attach_input_widgets([
+    'DataSmall',
+])
 class CurveLength_Node(BrepBuilderAPINodeBase):
     """
     Curve Length__________-
@@ -852,7 +974,7 @@ class CurveLength_Node(BrepBuilderAPINodeBase):
     title = 'CurveLength'
 
     init_inputs = [
-        NodeInputType('Wire/Edge', type_='data'),
+        NodeInputType('Wire/Edge'),
     ]
 
     init_outputs = [
@@ -863,7 +985,7 @@ class CurveLength_Node(BrepBuilderAPINodeBase):
         lengths = []
         for curve in self.get_inputs():
             lengths.append(curve_length(curve))
-        self.set_output_val(0, Data(lengths))
+        self.set_output_val(0, OCCData(lengths))
         # print(tmp)
 
 
@@ -876,16 +998,20 @@ BRepBuilderAPI_nodes = [
 ]
 
 
-# -------------------------------------------
-
-# BREPOFFSETAPI------------------------------
+# 
+# BrepOffsetAPI nodes
+# 
 
 
 class BrepOffsetAPINodeBase(PythonOCCNodeBase):
     version = 'v0.1'
-    color = '#aabb44'
+    GUI = guis.BrepOffsetAPINodeGui
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Pipe_Node(BrepOffsetAPINodeBase):
     """
     Generates pipe________-
@@ -896,8 +1022,8 @@ class Pipe_Node(BrepOffsetAPINodeBase):
     title = 'pipe'
 
     init_inputs = [
-        NodeInputType('wire', type_='data'),
-        NodeInputType('radius', type_='data'),
+        NodeInputType('wire'),
+        NodeInputType('radius'),
     ]
 
     init_outputs = [
@@ -929,7 +1055,7 @@ class Pipe_Node(BrepOffsetAPINodeBase):
                 profile_face = BRepBuilderAPI_MakeFace(profile_wire).Face()
                 pipe = BRepOffsetAPI_MakePipe(w, profile_face).Shape()
                 pipes.append(pipe)
-            self.set_output_val(0, Data(pipes))
+            self.set_output_val(0, OCCData(pipes))
        
         else:
             if isinstance(wire, TopoDS_Edge):
@@ -950,7 +1076,7 @@ class Pipe_Node(BrepOffsetAPINodeBase):
             profile_wire = BRepBuilderAPI_MakeWire(profile_edge).Wire()
             profile_face = BRepBuilderAPI_MakeFace(profile_wire).Face()
             pipe = BRepOffsetAPI_MakePipe(wire, profile_face).Shape()
-            self.set_output_val(0, Data(pipe))
+            self.set_output_val(0, OCCData(pipe))
 
 
 BRepOffsetAPI_nodes = [
@@ -958,16 +1084,21 @@ BRepOffsetAPI_nodes = [
 ]
 
 
-# -------------------------------------------
-
-# BREPPRIMAPI --------------------------------
+# 
+# BRepPrimAPI nodes
+# 
 
 
 class BrepPrimAPINodeBase(PythonOCCNodeBase):
     version = 'v0.1'
-    color = '#aabb44'
+    GUI = guis.BrepPrimAPINodeBase
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+    'DataSmall',
+])
 class Box_Node(BrepPrimAPINodeBase):
     """
     Generates box_________-
@@ -979,9 +1110,9 @@ class Box_Node(BrepPrimAPINodeBase):
     title = 'box'
 
     init_inputs = [
-        NodeInputType('w', type_='data'),
-        NodeInputType('l', type_='data'),
-        NodeInputType('h', type_='data'),
+        NodeInputType('w'),
+        NodeInputType('l'),
+        NodeInputType('h'),
     ]
 
     init_outputs = [
@@ -991,9 +1122,13 @@ class Box_Node(BrepPrimAPINodeBase):
     def update_event(self, inp=-1):
         width, length, height = self.get_inputs()
         box = BRepPrimAPI_MakeBox(gp_Pnt(), width, length, height).Shape()
-        self.set_output_val(0, Data(box))
+        self.set_output_val(0, OCCData(box))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Sphere_Node(BrepPrimAPINodeBase):
     """
     Generates sphere_________-
@@ -1004,8 +1139,8 @@ class Sphere_Node(BrepPrimAPINodeBase):
     title = 'sphere'
 
     init_inputs = [
-        NodeInputType('point', type_='data'),
-        NodeInputType('radius', type_='data'),
+        NodeInputType('point'),
+        NodeInputType('radius'),
     ]
 
     init_outputs = [
@@ -1015,9 +1150,14 @@ class Sphere_Node(BrepPrimAPINodeBase):
     def update_event(self, inp=-1):
         point, radius = self.get_inputs()
         sphere = BRepPrimAPI_MakeSphere(point, radius).Shape()
-        self.set_output_val(0, Data(sphere))
+        self.set_output_val(0, OCCData(sphere))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+    'DataSmall',
+])
 class Cylinder_Node(BrepPrimAPINodeBase):
     """
     Generates cylinder_______-
@@ -1029,9 +1169,9 @@ class Cylinder_Node(BrepPrimAPINodeBase):
     title = 'cylinder'
 
     init_inputs = [
-        NodeInputType('axe', type_='data'),
-        NodeInputType('radius', type_='data'),
-        NodeInputType('len', type_='data'),
+        NodeInputType('axe'),
+        NodeInputType('radius'),
+        NodeInputType('len'),
     ]
 
     init_outputs = [
@@ -1041,8 +1181,13 @@ class Cylinder_Node(BrepPrimAPINodeBase):
     def update_event(self, inp=-1):
         axe, radius, length = self.get_inputs()
         cylinder = BRepPrimAPI_MakeCylinder(axe, radius, length).Shape()
-        self.set_output_val(0, Data(cylinder))
+        self.set_output_val(0, OCCData(cylinder))
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+    'DataSmall',
+])
 class Torus_Node(BrepPrimAPINodeBase):
     """
     Generates torus__________-
@@ -1054,9 +1199,9 @@ class Torus_Node(BrepPrimAPINodeBase):
     title = 'torus'
 
     init_inputs = [
-        NodeInputType('axe', type_='data'),
-        NodeInputType('distance', type_='data'),
-        NodeInputType('radius', type_='data'),
+        NodeInputType('axe'),
+        NodeInputType('distance'),
+        NodeInputType('radius'),
     ]
 
     init_outputs = [
@@ -1066,7 +1211,8 @@ class Torus_Node(BrepPrimAPINodeBase):
     def update_event(self, inp=-1):
         axe, distance, radius = self.get_inputs()
         torus = BRepPrimAPI_MakeTorus(axe, distance, radius).Shape()
-        self.set_output_val(0, Data(torus))
+        self.set_output_val(0, OCCData(torus))
+
 
 BRepPrimAPI_nodes = [
     Box_Node,
@@ -1076,16 +1222,20 @@ BRepPrimAPI_nodes = [
 ]
 
 
-# -------------------------------------------
-
-# BREPALGOAPI --------------------------------
+# 
+# BrepAlgoAPI nodes
+# 
 
 
 class BrepAlgoAPINodeBase(PythonOCCNodeBase):
     version = 'v0.1'
-    color = '#ab0c36'
+    GUI = guis.BrepAlgoAPINodeGui
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Fuse_Node(BrepAlgoAPINodeBase):
     """
     Generates fusion_________-
@@ -1096,8 +1246,8 @@ class Fuse_Node(BrepAlgoAPINodeBase):
     title = 'fuse'
 
     init_inputs = [
-        NodeInputType('a', type_='data'),
-        NodeInputType('b', type_='data'),
+        NodeInputType('a'),
+        NodeInputType('b'),
     ]
     init_outputs = [
         NodeOutputType(),
@@ -1113,12 +1263,16 @@ class Fuse_Node(BrepAlgoAPINodeBase):
             for i in range(2, count):
                 ijk += 1
                 fuse_shps[ijk] = BRepAlgoAPI_Fuse(fuse_shps[ijk-1], a[i]).Shape()
-            self.set_output_val(0, Data(fuse_shps[ijk]))
+            self.set_output_val(0, OCCData(fuse_shps[ijk]))
         else:
             fuse_shp = BRepAlgoAPI_Fuse(a, b).Shape()
-            self.set_output_val(0, Data(fuse_shp))
+            self.set_output_val(0, OCCData(fuse_shp))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Common_Node(BrepAlgoAPINodeBase):
     """
     Generates common_________-
@@ -1129,8 +1283,8 @@ class Common_Node(BrepAlgoAPINodeBase):
     title = 'common'
 
     init_inputs = [
-        NodeInputType('a', type_='data'),
-        NodeInputType('b', type_='data'),
+        NodeInputType('a'),
+        NodeInputType('b'),
     ]
     init_outputs = [
         NodeOutputType(),
@@ -1139,9 +1293,13 @@ class Common_Node(BrepAlgoAPINodeBase):
     def update_event(self, inp=-1):
         a, b = self.get_inputs()
         common_shp = BRepAlgoAPI_Common(a, b).Shape()
-        self.set_output_val(0, Data(common_shp))
+        self.set_output_val(0, OCCData(common_shp))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Cut_Node(BrepAlgoAPINodeBase):
     """
     Generates cutting________-
@@ -1152,8 +1310,8 @@ class Cut_Node(BrepAlgoAPINodeBase):
     title = 'cut'
 
     init_inputs = [
-        NodeInputType('Basis', type_='data'),
-        NodeInputType('Cutter', type_='data'),
+        NodeInputType('Basis'),
+        NodeInputType('Cutter'),
     ]
     init_outputs = [
         NodeOutputType(),
@@ -1169,16 +1327,20 @@ class Cut_Node(BrepAlgoAPINodeBase):
             for i in range(1, count):
                 ijk += 1
                 cut_shps[ijk] = BRepAlgoAPI_Cut(cut_shps[ijk - 1], cutter[i]).Shape()
-            self.set_output_val(0, Data(cut_shps[ijk]))
+            self.set_output_val(0, OCCData(cut_shps[ijk]))
         elif type(basis) is list and type(cutter) is not list:
             cut_shps = []
             for b in basis:
                 cut_shps.append(BRepAlgoAPI_Cut(b, cutter).Shape())
-            self.set_output_val(0, Data(cut_shps))
+            self.set_output_val(0, OCCData(cut_shps))
         else:
             cut_shp = BRepAlgoAPI_Cut(basis, cutter).Shape()
-            self.set_output_val(0, Data(cut_shp))
+            self.set_output_val(0, OCCData(cut_shp))
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Section_Node(BrepAlgoAPINodeBase):
     """
     Generates Sections_______-
@@ -1189,8 +1351,8 @@ class Section_Node(BrepAlgoAPINodeBase):
     title = 'section'
 
     init_inputs = [
-        NodeInputType('Basis', type_='data'),
-        NodeInputType('Cutter', type_='data'),
+        NodeInputType('Basis'),
+        NodeInputType('Cutter'),
     ]
     init_outputs = [
         NodeOutputType(),
@@ -1207,15 +1369,15 @@ class Section_Node(BrepAlgoAPINodeBase):
                 for i in range(1, count):
                     ijk += 1
                     cut_shps[ijk] = BRepAlgoAPI_Section(cut_shps[ijk - 1], cutter[i]).Shape()
-                self.set_output_val(0, Data(cut_shps[ijk]))
+                self.set_output_val(0, OCCData(cut_shps[ijk]))
             elif type(basis) is list and type(cutter) is not list:
                 cut_shps = []
                 for b in basis:
                     cut_shps.append(BRepAlgoAPI_Section(b, cutter).Shape())
-                self.set_output_val(0, Data(cut_shps))
+                self.set_output_val(0, OCCData(cut_shps))
             else:
                 cut_shp = BRepAlgoAPI_Section(basis, cutter).Shape()
-                self.set_output_val(0, Data(cut_shp))
+                self.set_output_val(0, OCCData(cut_shp))
 
 
 BRepAlgoAPI_nodes = [
@@ -1226,16 +1388,19 @@ BRepAlgoAPI_nodes = [
 ]
 
 
-# -------------------------------------------
-
-# BREPFILLETAPI --------------------------------
+# BrepFilletAPI nodes
+# 
 
 
 class BrepFilletAPINodeBase(PythonOCCNodeBase):
     version = 'v0.1'
-    color = '#e0149c'
+    GUI = guis.BrepFilletAPINodeGui
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Fillet_Node(BrepFilletAPINodeBase):
     """
     Generates fillet_________-
@@ -1246,8 +1411,8 @@ class Fillet_Node(BrepFilletAPINodeBase):
     title = 'fillet'
 
     init_inputs = [
-        NodeInputType('shape', type_='data'),
-        NodeInputType('radius', type_='data'),
+        NodeInputType('shape'),
+        NodeInputType('radius'),
     ]
     init_outputs = [
         NodeOutputType(),
@@ -1266,7 +1431,7 @@ class Fillet_Node(BrepFilletAPINodeBase):
 
         blended_fused_solids = fill.Shape()
 
-        self.set_output_val(0, Data(blended_fused_solids))
+        self.set_output_val(0, OCCData(blended_fused_solids))
 
 
 BRepFilletAPI_nodes = [
@@ -1274,14 +1439,19 @@ BRepFilletAPI_nodes = [
 ]
 
 
-# -------------------------------------------
+# 
+# Geom and GeomAPI nodes
+# 
 
-# GEOMAPI------------------------------------
 
 class GeomNodeBase(PythonOCCNodeBase):
     version = 'v0.1'
-    color = '#c91604'
+    GUI = guis.GeomNodeGui
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class Circle_Node(GeomNodeBase):
     """
     Draw circle______________-
@@ -1292,8 +1462,8 @@ class Circle_Node(GeomNodeBase):
     title = 'Circle'
 
     init_inputs = [
-        NodeInputType('Ax2', type_='data'),
-        NodeInputType('Radius', type_='data'),
+        NodeInputType('Ax2'),
+        NodeInputType('Radius'),
     ]
     init_outputs = [
         NodeOutputType(),
@@ -1302,20 +1472,19 @@ class Circle_Node(GeomNodeBase):
     def update_event(self, inp=-1):
         axis, radius  = self.get_inputs()
         circle = Geom_Circle(axis, radius)
-        self.set_output_val(0, Data(circle))
+        self.set_output_val(0, OCCData(circle))
 
 Geom_nodes = [
     Circle_Node,
 ]
 
-# -------------------------------------------
-
-# GEOMAPI------------------------------------
-
 class GeomAPINodeBase(PythonOCCNodeBase):
     version = 'v0.1'
-    color = '#ff4633'
+    GUI = guis.GeomAPINodeGui
 
+@attach_input_widgets([
+    'DataSmall',
+])
 class PointsSurface_Node(GeomAPINodeBase):
     """
     Generates surface________-
@@ -1325,7 +1494,7 @@ class PointsSurface_Node(GeomAPINodeBase):
     title = 'PointsSurface'
 
     init_inputs = [
-        NodeInputType('points', type_='data'),
+        NodeInputType('points'),
     ]
     init_outputs = [
         NodeOutputType(),
@@ -1345,7 +1514,7 @@ class PointsSurface_Node(GeomAPINodeBase):
                 print(pts[c][n])
                 array.SetValue(n + 1, c + 1, pts[c][n])
         nurbs = GeomAPI_PointsToBSplineSurface(array, 2, 2, GeomAbs_C2, 0.001).Surface()
-        self.set_output_val(0, Data(nurbs))
+        self.set_output_val(0, OCCData(nurbs))
 
 
 GeomAPI_nodes = [
@@ -1353,11 +1522,14 @@ GeomAPI_nodes = [
 ]
 
 
-# -------------------------------------------
+# 
+# Shape Analysis
+# 
 
-# SHAPE ANALYSIS --------------------------
 
-
+@attach_input_widgets([
+    'DataSmall',
+])
 class TopExplorer_Node(PythonOCCNodeBase):
     """
     Topology Explorer________-
@@ -1366,10 +1538,10 @@ class TopExplorer_Node(PythonOCCNodeBase):
 
     title = 'topexp'
     version = 'v0.1'
-    color = '#FF00FF'
+    GUI = guis.TopExplorerGui
 
     init_inputs = [
-        NodeInputType('shape', type_='data'),
+        NodeInputType('shape'),
     ]
     init_outputs = [
         NodeOutputType('vertex'),
@@ -1451,16 +1623,19 @@ class TopExplorer_Node(PythonOCCNodeBase):
                 compsolids.append(compsolid)
                 topexp_compsolid.Next()
 
-        self.set_output_val(0, Data(vertices_red))
-        self.set_output_val(1, edges)
-        self.set_output_val(2, wires)
-        self.set_output_val(3, faces)
-        self.set_output_val(4, shells)
-        self.set_output_val(5, solids)
-        self.set_output_val(6, compounds)
-        self.set_output_val(7, compsolids)
+        self.set_output_val(0, OCCData(vertices_red))
+        self.set_output_val(1, OCCData(edges))
+        self.set_output_val(2, OCCData(wires))
+        self.set_output_val(3, OCCData(faces))
+        self.set_output_val(4, OCCData(shells))
+        self.set_output_val(5, OCCData(solids))
+        self.set_output_val(6, OCCData(compounds))
+        self.set_output_val(7, OCCData(compsolids))
 
 
+@attach_input_widgets([
+    'DataSmall',
+])
 class BoundingBox_Node(PythonOCCNodeBase):
     """
     Bounding Box________-
@@ -1469,10 +1644,10 @@ class BoundingBox_Node(PythonOCCNodeBase):
 
     title = 'bounding box'
     version = 'v0.1'
-    color = '#FF00FF'
+    GUI = guis.BoundingBoxGui
 
     init_inputs = [
-        NodeInputType('shape', type_='data'),
+        NodeInputType('shape'),
     ]
     init_outputs = [
         NodeOutputType('box'),
@@ -1483,7 +1658,7 @@ class BoundingBox_Node(PythonOCCNodeBase):
         for shape in self.get_inputs():
             aBaryCenter, [aHalfX, aHalfY, aHalfZ], aBox = get_oriented_boundingbox(shape)
             bboxes.append(aBox)
-        self.set_output_val(0, Data(bboxes))  # TODO make it work for list
+        self.set_output_val(0, OCCData(bboxes))  # TODO make it work for list
 
 
 Shape_Analysis_nodes = [
@@ -1492,16 +1667,19 @@ Shape_Analysis_nodes = [
 ]
 
 
-# -------------------------------------------
-
-# DISPLAY --------------------------------
+# 
+# Display nodes
+# 
 
 
 class DisplayNodeBase(PythonOCCNodeBase):
     version = 'v0.1'
-    color = '#3355dd'
+    GUI = guis.DisplayNodeGui
 
 
+@attach_input_widgets([
+    'DataSmall',
+])
 class Display_Node(DisplayNodeBase):
     """
     display shapes
@@ -1511,7 +1689,7 @@ class Display_Node(DisplayNodeBase):
     title = 'display'
 
     init_inputs = [
-        NodeInputType('shapes', type_='data'),
+        NodeInputType('shapes'),
     ]
 
     def update_event(self, inp=-1):
@@ -1546,6 +1724,9 @@ class Display_Node(DisplayNodeBase):
         display.FitAll()
 
 
+@attach_input_widgets([
+    'DataSmall'
+])
 class Color_Node(DisplayNodeBase):
     """
     Choose Color_____________-
@@ -1556,8 +1737,8 @@ class Color_Node(DisplayNodeBase):
     title = 'color'
 
     init_inputs = [
-        NodeInputType('shape', type_='data'),
-        NodeInputType('Int', type_='data'),
+        NodeInputType('shape'),
+        NodeInputType('Int'),
     ]
     init_outputs = [
         NodeOutputType(),
@@ -1569,11 +1750,11 @@ class Color_Node(DisplayNodeBase):
         if type(shape) is list:
             for shp in shape:
                 shapecolored.append([shp, colore])
-                self.set_output_val(0, Data(shapecolored))
+                self.set_output_val(0, OCCData(shapecolored))
         else:
             shapecolored.append(shape)
             shapecolored.append(colore)
-            self.set_output_val(0, Data(shapecolored))
+            self.set_output_val(0, OCCData(shapecolored))
 
 
 Display_nodes = [
@@ -1582,11 +1763,15 @@ Display_nodes = [
 ]
 
 
-# -------------------------------------------
+#
+# Utility nodes
+# 
 
-# TOOLS--------------------------------------
 
-
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class List_Node(PythonOCCNodeBase_DynamicInputs):
     """
     Generates List_______-
@@ -1596,11 +1781,11 @@ class List_Node(PythonOCCNodeBase_DynamicInputs):
 
     title = 'List'
     version = 'v0.1'
-    color = '#000000'
+    GUI = guis.ListGui
 
     init_inputs = [
-        NodeInputType(type_='data'),
-        NodeInputType(type_='data'),
+        NodeInputType(),
+        NodeInputType(),
     ]
 
     init_outputs = [
@@ -1611,6 +1796,9 @@ class List_Node(PythonOCCNodeBase_DynamicInputs):
         return elements
 
 
+@attach_input_widgets([
+    'DataSmall',
+])
 class ListLength_Node(PythonOCCNodeBase):
     """
     List Length__________-
@@ -1619,10 +1807,10 @@ class ListLength_Node(PythonOCCNodeBase):
 
     title = 'ListLength'
     version = 'v0.1'
-    color = '#000000'
+    GUI = guis.ListLengthGui
 
     init_inputs = [
-        NodeInputType('list', type_='data'),
+        NodeInputType('list'),
     ]
 
     init_outputs = [
@@ -1633,11 +1821,14 @@ class ListLength_Node(PythonOCCNodeBase):
         for el in self.get_inputs():
             if type(el) is list:
                 length = len(el)
-                self.set_output_val(0, Data(length))
+                self.set_output_val(0, OCCData(length))
             else :
                 pass
 
 
+@attach_input_widgets([
+    'DataSmall',
+])
 class FlattenList_Node(PythonOCCNodeBase):
     """
     Flatten list_________-
@@ -1646,10 +1837,10 @@ class FlattenList_Node(PythonOCCNodeBase):
 
     title = 'FlattenList'
     version = 'v0.1'
-    color = '#000000'
+    GUI = guis.FlattenListGui
 
     init_inputs = [
-        NodeInputType('list', type_='data'),
+        NodeInputType('list'),
     ]
 
     init_outputs = [
@@ -1668,9 +1859,13 @@ class FlattenList_Node(PythonOCCNodeBase):
                         newlist.append(e)
             else:
                 newlist.append(el)
-        self.set_output_val(0,newlist)
+        self.set_output_val(0, OCCData(newlist))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class ListItem_Node(PythonOCCNodeBase):
     """
     Item list____________-
@@ -1680,11 +1875,11 @@ class ListItem_Node(PythonOCCNodeBase):
 
     title = 'ListItem'
     version = 'v0.1'
-    color = '#000000'
+    GUI = guis.ListItemGui
 
     init_inputs = [
-        NodeInputType('list', type_='data'),
-        NodeInputType('index', type_='data'),
+        NodeInputType('list'),
+        NodeInputType('index'),
     ]
 
     init_outputs = [
@@ -1693,9 +1888,13 @@ class ListItem_Node(PythonOCCNodeBase):
 
     def update_event(self, inp=-1):
         reflist, index = self.get_inputs()
-        self.set_output_val(0, Data(reflist[index]))
+        self.set_output_val(0, OCCData(reflist[index]))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class RepeatData_Node(PythonOCCNodeBase):
     """
     Repeat Data__________-
@@ -1705,11 +1904,11 @@ class RepeatData_Node(PythonOCCNodeBase):
 
     title = 'RepeatData'
     version = 'v0.1'
-    color = '#000000'
+    GUI = guis.RepeatDataGui
 
     init_inputs = [
-        NodeInputType('Data', type_='data'),
-        NodeInputType('Length', type_='data'),
+        NodeInputType('Data'),
+        NodeInputType('Length'),
     ]
 
     init_outputs = [
@@ -1717,17 +1916,22 @@ class RepeatData_Node(PythonOCCNodeBase):
     ]
 
     def update_event(self, inp=-1):
-        İnfo, Length = self.get_inputs()
+        Data, Length = self.get_inputs()
         repeat = []
         for l in range(Length):
-            if type(İnfo) is list:
-                for d in İnfo:
+            if type(Data) is list:
+                for d in Data:
                     repeat.append(d)
             else:
-                repeat.append(İnfo)
-        self.set_output_val(0, Data(repeat))
+                repeat.append(Data)
+        self.set_output_val(0, OCCData(repeat))
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+    'DataSmall',
+])
 class Serie_Node(PythonOCCNodeBase):
     """
     Create Serie_________-
@@ -1738,12 +1942,12 @@ class Serie_Node(PythonOCCNodeBase):
 
     title = 'Serie'
     version = 'v0.1'
-    color = '#000000'
+    GUI = guis.SerieGui
 
     init_inputs = [
-        NodeInputType('Start', type_='data'),
-        NodeInputType('Step', type_='data'),
-        NodeInputType('Length', type_='data'),
+        NodeInputType('Start'),
+        NodeInputType('Step'),
+        NodeInputType('Length'),
     ]
 
     init_outputs = [
@@ -1758,8 +1962,12 @@ class Serie_Node(PythonOCCNodeBase):
         for l in range(Length-1):
             count += Step
             serie.append(count)
-        self.set_output_val(0, Data(serie))
+        self.set_output_val(0, OCCData(serie))
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class ShiftList_Node(PythonOCCNodeBase):
     """
     Shift List___________-
@@ -1769,11 +1977,11 @@ class ShiftList_Node(PythonOCCNodeBase):
 
     title = 'ShiftLIst'
     version = 'v0.1'
-    color = '#000000'
+    GUI = guis.ShiftListGui
 
     init_inputs = [
-        NodeInputType('List', type_='data'),
-        NodeInputType('ShiftValue', type_='data'),
+        NodeInputType('List'),
+        NodeInputType('ShiftValue'),
     ]
 
     init_outputs = [
@@ -1789,7 +1997,7 @@ class ShiftList_Node(PythonOCCNodeBase):
         elif value > 0:
             for i in range(value, len(list_)):
                 shifted_list.append(list_[i])
-        self.set_output_val(0, Data(shifted_list))
+        self.set_output_val(0, OCCData(shifted_list))
 
 
 Tools_nodes = [
@@ -1803,16 +2011,20 @@ Tools_nodes = [
 ]
 
 
-# --------------------------------------------------------
-
-# DATA EXCHANGE------------------------------------------
+# 
+# Data Exchange nodes
+# 
 
 
 class DataExchangeNodeBase(PythonOCCNodeBase):
     version = 'v0.1'
-    color = '#6b6767'
+    GUI = guis.DataExchangeNodeGui
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class ExportStep_Node(DataExchangeNodeBase):
     """
     Generates Step_______-
@@ -1823,8 +2035,8 @@ class ExportStep_Node(DataExchangeNodeBase):
     title = 'ExportStep'
 
     init_inputs = [
-        NodeInputType('shape', type_='data'),
-        NodeInputType('fname', type_='data'),
+        NodeInputType('shape'),
+        NodeInputType('fname'),
     ]
 
     init_outputs = [
@@ -1849,16 +2061,15 @@ class ImportStep_Node(DataExchangeNodeBase):
     init_outputs = [
         NodeOutputType(),
     ]
-    main_widget_class = widgets.ImportFileNode_MainWidget
-    main_widget_pos = 'between ports'
-    style = 'normal'
+    # main_widget_class = guis.ImportFileNode_MainWidget
+    # main_widget_pos = 'between ports'
+    # style = 'normal'
+    GUI = guis.ImportFileNode_Gui
 
     def __init__(self, params):
         super().__init__(params)
 
-        self.actions['edit string via dialog'] = {'method': self.action_edit_via_dialog}
         self.string = None
-
 
     def place_event(self):
         self.update()
@@ -1872,33 +2083,22 @@ class ImportStep_Node(DataExchangeNodeBase):
 
     def update_event(self, input_called=-1):
         shape = read_step_file(self.string)
-        self.set_output_val(0, Data(shape))
-
-    def action_edit_via_dialog(self):
-        return
-
-        # from ..EditVal_Dialog import EditVal_Dialog
-        #
-        # val_dialog = EditVal_Dialog(parent=None, init_val=self.val)
-        # accepted = val_dialog.exec_()
-        # if accepted:
-        #	 self.main_widget().setText(str(val_dialog.get_val()))
-        #	 self.update()
-
+        self.set_output_val(0, OCCData(shape))
 
     def get_current_var_name(self):
-        return self.input(0)
-
+        return self.inp(0)
 
     def get_state(self):
-        return {
-            'string': self.string  # self.main_widget().get_val()
-        }
+        return {'string': self.string}
 
     def set_state(self, data, version):
         self.string = data['string']
 
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+])
 class ExportStl_Node(DataExchangeNodeBase):
     """
     Generates Stl________-
@@ -1909,8 +2109,8 @@ class ExportStl_Node(DataExchangeNodeBase):
     title = 'ExportStl'
 
     init_inputs = [
-        NodeInputType('shape', type_='data'),
-        NodeInputType('name', type_='data'),
+        NodeInputType('shape'),
+        NodeInputType('name'),
     ]
 
     init_outputs = [
@@ -1933,16 +2133,15 @@ class ImportStl_Node(DataExchangeNodeBase):
     init_outputs = [
         NodeOutputType(),
     ]
-    main_widget_class = widgets.ImportFileNode_MainWidget
-    main_widget_pos = 'between ports'
-    style = 'normal'
+    # main_widget_class = guis.ImportFileNode_MainWidget
+    # main_widget_pos = 'between ports'
+    # style = 'normal'
+    GUI = guis.ImportFileNode_Gui
 
     def __init__(self, params):
         super().__init__(params)
 
-        self.actions['edit string via dialog'] = {'method': self.action_edit_via_dialog}
         self.string = None
-
 
     def place_event(self):
         self.update()
@@ -1956,32 +2155,22 @@ class ImportStl_Node(DataExchangeNodeBase):
 
     def update_event(self, input_called=-1):
         shape = read_stl_file(self.string)
-        self.set_output_val(0, Data(shape))
-
-    def action_edit_via_dialog(self):
-        return
-
-        # from ..EditVal_Dialog import EditVal_Dialog
-        #
-        # val_dialog = EditVal_Dialog(parent=None, init_val=self.val)
-        # accepted = val_dialog.exec_()
-        # if accepted:
-        #	 self.main_widget().setText(str(val_dialog.get_val()))
-        #	 self.update()
-
+        self.set_output_val(0, OCCData(shape))
 
     def get_current_var_name(self):
-        return self.input(0)
-
+        return self.inp(0)
 
     def get_state(self):
-        return {
-            'string': self.string  # self.main_widget().get_val()
-        }
+        return {'string': self.string}
 
     def set_state(self, data, version):
         self.string = data['string']
 
+@attach_input_widgets([
+    'DataSmall',
+    'DataSmall',
+    'DataSmall',
+])
 class ExportGcode_Node(DataExchangeNodeBase):
     """
     Generates Gcode______-
@@ -1993,9 +2182,9 @@ class ExportGcode_Node(DataExchangeNodeBase):
     title = 'ExportGcode'
 
     init_inputs = [
-        NodeInputType('points', type_='data'),
-        NodeInputType('name', type_='data'),
-        NodeInputType('speed', type_='data'),
+        NodeInputType('points'),
+        NodeInputType('name'),
+        NodeInputType('speed'),
     ]
 
     init_outputs = [
@@ -2018,7 +2207,12 @@ DataExchange_nodes = [
 ]
 
 
-# -------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------------------
+
+
+# 
+# Export
+# 
 
 
 export_nodes([
