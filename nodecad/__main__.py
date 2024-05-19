@@ -212,4 +212,5 @@ def run(*args_,
 
 if __name__ == '__main__':
     import pathlib
-    run(nodes=[pathlib.Path('PythonOCC')],show_dialog=False)
+    run(nodes=[pathlib.Path('std')],show_dialog=False)
+    #ryven.run_ryven(nodes=[pathlib.Path('std')],show_dialog=False)

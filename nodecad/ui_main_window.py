@@ -12,6 +12,8 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 
+from pyqtribbon import RibbonBar
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -92,35 +94,37 @@ class Ui_MainWindow(object):
         self.console_placeholder_widget = QWidget(self.main_vertical_splitter)
         self.console_placeholder_widget.setObjectName(u"console_placeholder_widget")
         self.main_vertical_splitter.addWidget(self.console_placeholder_widget)
-
         self.gridLayout.addWidget(self.main_vertical_splitter, 0, 0, 1, 1)
 
-        MainWindow.setCentralWidget(self.centralWidget)
-        self.menuBar = QMenuBar(MainWindow)
-        self.menuBar.setObjectName(u"menuBar")
-        self.menuBar.setGeometry(QRect(0, 0, 1368, 30))
-        self.menuFile = QMenu(self.menuBar)
-        self.menuFile.setObjectName(u"menuFile")
-        self.menuScripts = QMenu(self.menuFile)
-        self.menuScripts.setObjectName(u"menuScripts")
-        self.menuView = QMenu(self.menuBar)
-        self.menuView.setObjectName(u"menuView")
-        self.menuFlow_Design_Style = QMenu(self.menuView)
-        self.menuFlow_Design_Style.setObjectName(u"menuFlow_Design_Style")
-        self.menuSave_Picture = QMenu(self.menuView)
-        self.menuSave_Picture.setObjectName(u"menuSave_Picture")
-        self.menuDebugging = QMenu(self.menuBar)
-        self.menuDebugging.setObjectName(u"menuDebugging")
-        self.menuInfo_Messages = QMenu(self.menuDebugging)
-        self.menuInfo_Messages.setObjectName(u"menuInfo_Messages")
-        MainWindow.setMenuBar(self.menuBar)
-        self.statusBar = QStatusBar(MainWindow)
-        self.statusBar.setObjectName(u"statusBar")
-        MainWindow.setStatusBar(self.statusBar)
+        self.menuBar = RibbonBar(title="RibbonBar",maxRows=3, parent=MainWindow)
 
-        self.menuBar.addAction(self.menuFile.menuAction())
-        self.menuBar.addAction(self.menuView.menuAction())
-        self.menuBar.addAction(self.menuDebugging.menuAction())
+        self.menuFile = QMenu(self.menuBar)
+        self.menuScripts = QMenu(self.menuFile)
+        self.menuView = QMenu(self.menuBar)
+        self.menuFlow_Design_Style = QMenu(self.menuView)
+        self.menuSave_Picture = QMenu(self.menuView)
+        self.menuDebugging = QMenu(self.menuBar)
+        self.menuInfo_Messages = QMenu(self.menuDebugging)
+
+        self.file = QToolButton(self.menuBar)
+        self.file.setMenu(self.menuFile)
+        self.file.setText("File")
+        self.file.setPopupMode(QToolButton.InstantPopup)
+        
+        self.view = QToolButton(self.menuBar)
+        self.view.setMenu(self.menuView)
+        self.view.setText("View")
+        self.view.setPopupMode(QToolButton.InstantPopup)
+        
+        self.debug = QToolButton(self.menuBar)
+        self.debug.setMenu(self.menuDebugging)
+        self.debug.setText("Options")
+        self.debug.setPopupMode(QToolButton.InstantPopup)
+
+        self.menuBar.addQuickAccessButton(self.file)
+        self.menuBar.addQuickAccessButton(self.view)
+        self.menuBar.addQuickAccessButton(self.debug)
+
         self.menuFile.addAction(self.actionImport_Nodes)
         self.menuFile.addAction(self.actionImport_Example_Nodes)
         self.menuFile.addAction(self.actionSave_Project)
@@ -128,16 +132,32 @@ class Ui_MainWindow(object):
         self.menuScripts.addAction(self.actionNew_Flow)
         self.menuScripts.addAction(self.actionRename_Flow)
         self.menuScripts.addAction(self.actionDelete_Flow)
+
         self.menuView.addSeparator()
         self.menuView.addAction(self.menuFlow_Design_Style.menuAction())
         self.menuView.addAction(self.menuSave_Picture.menuAction())
         self.menuSave_Picture.addAction(self.actionSave_Pic_Viewport)
         self.menuSave_Picture.addAction(self.actionSave_Pic_Whole_Scene_scaled)
+
         self.menuDebugging.addAction(self.menuInfo_Messages.menuAction())
         self.menuInfo_Messages.addAction(self.actionEnableInfoMessages)
         self.menuInfo_Messages.addAction(self.actionDisableInfoMessages)
 
-        self.retranslateUi(MainWindow)
+        MainWindow.setCentralWidget(self.centralWidget)
+        MainWindow.setMenuBar(self.menuBar)
+        self.statusBar = QStatusBar(MainWindow)
+        self.statusBar.setObjectName(u"statusBar")
+        MainWindow.setStatusBar(self.statusBar)
+
+        # Categories
+        category1 = self.menuBar.addCategory("Test")
+        panel1 = category1.addPanel("Box")
+
+        disp = panel1.addLargeButton("Display Box", QIcon("python.png"))
+        disp.clicked.connect(self.displayBOX)
+
+        eras = panel1.addLargeButton("Erase Box", QIcon("python.png"))
+        eras.clicked.connect(self.eraseBOX)
 
         self.flows_tab_widget.setCurrentIndex(0)
 
@@ -145,38 +165,8 @@ class Ui_MainWindow(object):
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
 
-    def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.actionImport_Nodes.setText(QCoreApplication.translate("MainWindow", u"Import Nodes", None))
-        self.actionSave_Project.setText(QCoreApplication.translate("MainWindow", u"Save Project", None))
-        self.actionDesignDark_Std.setText(QCoreApplication.translate("MainWindow", u"Dark Std", None))
-        self.actionDesignDark_Tron.setText(QCoreApplication.translate("MainWindow", u"Dark Tron", None))
-        self.actionEnableInfoMessages.setText(QCoreApplication.translate("MainWindow", u"Enable", None))
-        self.actionDisableInfoMessages.setText(QCoreApplication.translate("MainWindow", u"Disable", None))
-        self.actionSave_Pic_Viewport.setText(QCoreApplication.translate("MainWindow", u"Save Pic - Viewport", None))
-#if QT_CONFIG(tooltip)
-        self.actionSave_Pic_Viewport.setToolTip(QCoreApplication.translate("MainWindow", u"Save a picture of the current scene's viewport.\n"
-"This will save exactly what you see in the same resolution.", None))
-#endif // QT_CONFIG(tooltip)
-        self.actionSave_Pic_Whole_Scene_scaled.setText(QCoreApplication.translate("MainWindow", u"Save Pic - Whole Scene (scaled)", None))
-#if QT_CONFIG(tooltip)
-        self.actionSave_Pic_Whole_Scene_scaled.setToolTip(QCoreApplication.translate("MainWindow", u"Saves a picture of the whole current scene. \n"
-"The more you zoomed in, the sharper the picture.\n"
-"This will take a few seconds.", None))
-#endif // QT_CONFIG(tooltip)
-        self.actionNew_Flow.setText(QCoreApplication.translate("MainWindow", u"New", None))
-        self.actionRename_Flow.setText(QCoreApplication.translate("MainWindow", u"Rename", None))
-        self.actionDelete_Flow.setText(QCoreApplication.translate("MainWindow", u"Delete", None))
-        self.actionImport_Example_Nodes.setText(QCoreApplication.translate("MainWindow", u"Import Example Nodes", None))
-        self.flows_groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Flows", None))
-        self.nodes_groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Nodes", None))
-        self.flows_tab_widget.setTabText(self.flows_tab_widget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Main", None))
-        self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
-        self.menuScripts.setTitle(QCoreApplication.translate("MainWindow", u"Scripts", None))
-        self.menuView.setTitle(QCoreApplication.translate("MainWindow", u"View", None))
-        self.menuFlow_Design_Style.setTitle(QCoreApplication.translate("MainWindow", u"Flow Theme", None))
-        self.menuSave_Picture.setTitle(QCoreApplication.translate("MainWindow", u"Save Picture", None))
-        self.menuDebugging.setTitle(QCoreApplication.translate("MainWindow", u"Options", None))
-        self.menuInfo_Messages.setTitle(QCoreApplication.translate("MainWindow", u"Info Messages", None))
-    # retranslateUi
+    def displayBOX(self):
+        pass
 
+    def eraseBOX(self):
+        pass
