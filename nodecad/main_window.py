@@ -2,6 +2,7 @@ import sys
 import os
 import os.path
 
+from qtpy.QtCore import QTimer
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QMainWindow, QFileDialog, QShortcut, QAction, QActionGroup, QMenu, QMessageBox
 from ryvencore_qt import NodeGUI
@@ -23,11 +24,6 @@ import ryvencore_qt as rc
 import ryvencore_qt.src.widgets as rc_GUI
 
 from ryvencore import InfoMsgs
-
-from OCC.Display.backend import load_backend
-
-load_backend("pyside2")
-from OCC.Display.qtDisplay import qtViewer3d 
 
 class MainWindow(QMainWindow):
 
@@ -76,7 +72,7 @@ class MainWindow(QMainWindow):
         self.flow_view_theme_actions = []
         self.setup_menu_actions()
 
-        self.setWindowTitle(self.config.window_title)
+        self.setWindowTitle("NodeCAD")
         self.setWindowIcon(QIcon(abs_path_from_package_dir('resources/pics/Ryven_icon.png')))
         self.ui.flows_tab_widget.removeTab(0)  # remove placeholder tab
 
@@ -119,15 +115,7 @@ class MainWindow(QMainWindow):
             self.core_session.create_flow(title='hello world')
 
         self.resize(1500, 800)  # FIXME: this renders the --geometry argument useless, no?
-        # self.showMaximized()
-        self.set_canvas()
-
-    def set_canvas(self):
-        self.canvas = qtViewer3d(self)
-        self.canvas.InitDriver()
-        self.display = self.canvas._display
-        self.setCentralWidget(self.canvas)
-
+        QTimer.singleShot(100, self.showMaximized)
 
     def print_info(self):
         print('''

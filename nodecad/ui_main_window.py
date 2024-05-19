@@ -14,17 +14,14 @@ from qtpy.QtWidgets import *
 
 from pyqtribbon import RibbonBar
 
+from OCC.Display.backend import load_backend
+
+load_backend("pyside2")
+from OCC.Display.qtDisplay import qtViewer3d 
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
-        if not MainWindow.objectName():
-            MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1368, 908)
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(MainWindow.sizePolicy().hasHeightForWidth())
-        MainWindow.setSizePolicy(sizePolicy)
         self.actionImport_Nodes = QAction(MainWindow)
         self.actionImport_Nodes.setObjectName(u"actionImport_Nodes")
         self.actionSave_Project = QAction(MainWindow)
@@ -83,11 +80,6 @@ class Ui_MainWindow(object):
         self.main_horizontal_splitter.addWidget(self.splitter)
         self.flows_tab_widget = QTabWidget(self.main_horizontal_splitter)
         self.flows_tab_widget.setObjectName(u"flows_tab_widget")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.flows_tab_widget.sizePolicy().hasHeightForWidth())
-        self.flows_tab_widget.setSizePolicy(sizePolicy1)
         self.tab = QWidget()
         self.tab.setObjectName(u"tab")
         self.flows_tab_widget.addTab(self.tab, "")
@@ -145,8 +137,13 @@ class Ui_MainWindow(object):
         self.menuInfo_Messages.addAction(self.actionEnableInfoMessages)
         self.menuInfo_Messages.addAction(self.actionDisableInfoMessages)
 
+        # 3D Viewer
+        self.canvas = qtViewer3d(MainWindow)
+        self.canvas.InitDriver()
+        self.display = self.canvas._display
+
         # Set main window
-        #MainWindow.setCentralWidget(self.centralWidget)
+        MainWindow.setCentralWidget(self.canvas)
         MainWindow.addDockWidget(Qt.BottomDockWidgetArea, self.ryven_widget)
         MainWindow.setMenuBar(self.menuBar)
         self.statusBar = QStatusBar(MainWindow)
