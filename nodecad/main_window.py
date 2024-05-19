@@ -24,6 +24,10 @@ import ryvencore_qt.src.widgets as rc_GUI
 
 from ryvencore import InfoMsgs
 
+from OCC.Display.backend import load_backend
+
+load_backend("pyside2")
+from OCC.Display.qtDisplay import qtViewer3d 
 
 class MainWindow(QMainWindow):
 
@@ -116,6 +120,14 @@ class MainWindow(QMainWindow):
 
         self.resize(1500, 800)  # FIXME: this renders the --geometry argument useless, no?
         # self.showMaximized()
+        self.set_canvas()
+
+    def set_canvas(self):
+        self.canvas = qtViewer3d(self)
+        self.canvas.InitDriver()
+        self.display = self.canvas._display
+        self.setCentralWidget(self.canvas)
+
 
     def print_info(self):
         print('''

@@ -49,7 +49,9 @@ class Ui_MainWindow(object):
         self.actionDelete_Flow.setObjectName(u"actionDelete_Flow")
         self.actionImport_Example_Nodes = QAction(MainWindow)
         self.actionImport_Example_Nodes.setObjectName(u"actionImport_Example_Nodes")
-        self.centralWidget = QWidget(MainWindow)
+        self.ryven_widget = QDockWidget(MainWindow)
+        self.centralWidget = QWidget(self.ryven_widget)
+        self.ryven_widget.setWidget(self.centralWidget)
         self.centralWidget.setObjectName(u"centralWidget")
         self.gridLayout = QGridLayout(self.centralWidget)
         self.gridLayout.setSpacing(6)
@@ -96,6 +98,7 @@ class Ui_MainWindow(object):
         self.main_vertical_splitter.addWidget(self.console_placeholder_widget)
         self.gridLayout.addWidget(self.main_vertical_splitter, 0, 0, 1, 1)
 
+        # Set menubar
         self.menuBar = RibbonBar(title="RibbonBar",maxRows=3, parent=MainWindow)
 
         self.menuFile = QMenu(self.menuBar)
@@ -133,7 +136,6 @@ class Ui_MainWindow(object):
         self.menuScripts.addAction(self.actionRename_Flow)
         self.menuScripts.addAction(self.actionDelete_Flow)
 
-        self.menuView.addSeparator()
         self.menuView.addAction(self.menuFlow_Design_Style.menuAction())
         self.menuView.addAction(self.menuSave_Picture.menuAction())
         self.menuSave_Picture.addAction(self.actionSave_Pic_Viewport)
@@ -143,7 +145,9 @@ class Ui_MainWindow(object):
         self.menuInfo_Messages.addAction(self.actionEnableInfoMessages)
         self.menuInfo_Messages.addAction(self.actionDisableInfoMessages)
 
-        MainWindow.setCentralWidget(self.centralWidget)
+        # Set main window
+        #MainWindow.setCentralWidget(self.centralWidget)
+        MainWindow.addDockWidget(Qt.BottomDockWidgetArea, self.ryven_widget)
         MainWindow.setMenuBar(self.menuBar)
         self.statusBar = QStatusBar(MainWindow)
         self.statusBar.setObjectName(u"statusBar")
