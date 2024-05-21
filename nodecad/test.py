@@ -2,7 +2,7 @@ import sys
 import ryven
 import pathlib
 
-from qtpy.QtCore import Qt, QTimer, QCoreApplication
+from qtpy.QtCore import Qt, QTimer
 from qtpy.QtGui import QGuiApplication, QIcon
 from qtpy.QtWidgets import QApplication, QMainWindow, QDockWidget
 
