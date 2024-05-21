@@ -1,4 +1,5 @@
 from ryven.node_env import *
+from qtpy.QtCore import QCoreApplication
 
 guis = import_guis(__file__)
 
@@ -123,68 +124,6 @@ from OCCUtils.Common import \
     curve_length
 
 from OCCUtils.edge import Edge
-
-
-# 
-# 3D Viewer
-# 
-
-
-from datetime import datetime
-from OCC.Display.SimpleGui import init_display
-display, start_display, add_menu, add_function_to_menu = init_display(backend_str="pyside6")
-add_menu('View')
-
-def Fit_All():
-    display.FitAll()
-
-def Iso_View():
-    display.View_Iso()
-    display.FitAll()
-
-def Top_View():
-    display.View_Top()
-    display.FitAll()
-
-def Left_View():
-    display.View_Left()
-    display.FitAll()
-
-def Front_View():
-    display.View_Front()
-    display.FitAll()
-
-def Right_View():
-    display.View_Right()
-    display.FitAll()
-
-def Bottom_View():
-    display.View_Bottom()
-    display.FitAll()
-
-def Rear_View():
-    display.View_Rear()
-    display.FitAll()
-
-
-add_function_to_menu('View', Fit_All)
-add_function_to_menu('View', Iso_View)
-add_function_to_menu('View', Top_View)
-add_function_to_menu('View', Left_View)
-add_function_to_menu('View', Front_View)
-add_function_to_menu('View', Right_View)
-add_function_to_menu('View', Bottom_View)
-add_function_to_menu('View', Rear_View)
-
-add_menu('Screenshot')
-
-
-def Save_Screenshot():
-    screenshot_OCC_name = str(datetime.now().strftime("%Y-%m-%d_%H-%M-%S")) + '_screenshot.jpg'
-    display.ExportToImage(screenshot_OCC_name)
-
-
-add_function_to_menu('Screenshot', Save_Screenshot)
 
 
 # 
@@ -1686,7 +1625,8 @@ Shape_Analysis_nodes = [
 class DisplayNodeBase(PythonOCCNodeBase):
     version = 'v0.1'
     GUI = guis.DisplayNodeGui
-
+    NodeCAD = QCoreApplication.instance()
+    display = NodeCAD.display
 
 @attach_input_widgets([
     'DataSmall',
@@ -1704,7 +1644,7 @@ class Display_Node(DisplayNodeBase):
     ]
 
     def update_event(self, inp=-1):
-        display.EraseAll()
+        self.display.EraseAll()
         for v in self.get_inputs():
             if v is None:
                 pass
@@ -1715,24 +1655,24 @@ class Display_Node(DisplayNodeBase):
                             if type(e) is list:
                                 shape = e[0]
                                 colore = e[1]
-                                display.DisplayShape(shape, color=colore)
+                                self.display.DisplayShape(shape, color=colore)
                             else:
                                 if isinstance(e, int):
                                     shape = el[0]
                                     colore = el[1]
-                                    display.DisplayShape(shape, color=colore)
+                                    self.display.DisplayShape(shape, color=colore)
                                 else:
-                                    display.DisplayShape(e)
+                                    self.display.DisplayShape(e)
                     else:
                         if isinstance(el, int):
                             shape = v[0]
                             colore = v[1]
-                            display.DisplayShape(shape, color=colore)
+                            self.display.DisplayShape(shape, color=colore)
                         else:
-                            display.DisplayShape(el)
+                            self.display.DisplayShape(el)
             else :
-                display.DisplayShape(v)
-        display.FitAll()
+                self.display.DisplayShape(v)
+        self.display.FitAll()
 
 
 @attach_input_widgets([
