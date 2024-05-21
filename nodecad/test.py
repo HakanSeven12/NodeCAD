@@ -2,7 +2,7 @@ import sys
 import ryven
 import pathlib
 
-from qtpy.QtCore import Qt, QTimer
+from qtpy.QtCore import Qt, QTimer, QCoreApplication
 from qtpy.QtGui import QGuiApplication, QIcon
 from qtpy.QtWidgets import QApplication, QMainWindow, QDockWidget
 
@@ -14,10 +14,13 @@ load_backend("pyside2")
 from OCC.Display.qtDisplay import qtViewer3d
 from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
 
-class NodeCAD(QMainWindow):
+class MainWindow(QMainWindow):
+
     def __init__(self,app):
 
         super().__init__()
+        self.setWindowTitle("NodeCAD")
+        self.app = app
 
         self.ribbonmenu()
         self.canvas()
@@ -43,19 +46,21 @@ class NodeCAD(QMainWindow):
     def canvas(self):
         self.canvas = qtViewer3d(self)
         self.canvas.InitDriver()
-        self.display = self.canvas._display
+        self.app.display = self.canvas._display
         self.setCentralWidget(self.canvas)
 
     def ryven_dock(self,app):
-        ryven_main = ryven.run_ryven(qt_app=app, 
-                                     gui_parent=self, 
-                                     nodes=[pathlib.Path('std')],
-                                     show_dialog=False)
+        ryven_main = ryven.run_ryven(
+            qt_app=app, 
+            gui_parent=self.canvas, 
+            nodes=[pathlib.Path('PythonOCC')],
+            show_dialog=False)
 
         self.ryven_widget = QDockWidget(self)
         self.ryven_widget.setAllowedAreas(Qt.BottomDockWidgetArea)
         self.ryven_widget.setWidget(ryven_main)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.ryven_widget)
+
 
     def center_screen(self) -> None:
         """Centers the window on the screen."""
@@ -72,8 +77,14 @@ class NodeCAD(QMainWindow):
     def eraseBOX(self):
         self.display.Context.Erase(self.ais_box, True)
 
+class NodeCAD(QApplication):
+
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.display = None
+        self.main_window = MainWindow(app=self)
+        self.main_window.show()
+
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    NodeCAD = NodeCAD(app)
-    NodeCAD.show()
+    app = NodeCAD(sys.argv)
     sys.exit(app.exec_())
