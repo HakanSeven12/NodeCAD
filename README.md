@@ -61,6 +61,6 @@ For questions or feedback, please contact us:
 - Email: [hakanseven12@gmail.com](mailto:email@example.com)
 - Help: [NodeCAD Issues](https://github.com/HakanSeven12/NodeCAD/issues)
 
-## Acknowledgements
+## Thanks
 
 Thank you to all the developers and users who have contributed to the NodeCAD project.
