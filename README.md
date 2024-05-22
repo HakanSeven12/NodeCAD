@@ -1,7 +1,7 @@
 ![patreon-banner](https://github.com/HakanSeven12/NodeCAD/assets/3831435/0f2c1c7a-4f03-45a4-9cc7-481d9cf3f389)
 
 
-https://www.patreon.com/HakanSeven12
+[Support me on Patreon](https://www.patreon.com/HakanSeven12)
 
 
  NodeCAD
