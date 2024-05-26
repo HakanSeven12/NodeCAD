@@ -50,6 +50,10 @@ pip install git+https://github.com/tpaviot/pythonocc-utils.git
 pip install pyqtribbon
 ```
 
+4. Add PythonOCC Nodes:
+
+After the installation, you need to add this nodes: https://github.com/HakanSeven12/PythonOCC-Nodes-for-NodeCAD
+
 4. Run NodeCAD:
 ```
 python main.py
