@@ -10,7 +10,9 @@
 NodeCAD is an easy-to-use, open-source CAD software that allows users to create and edit 2D and 3D models.
 
 
-![example1](https://github.com/HakanSeven12/NodeCAD/blob/54cce862caad33b201df6fe2ccc58c27400c185d/screenshots/example1.png)
+![example1](https://github.com/HakanSeven12/NodeCAD/blob/main/screenshots/example1.png)
+
+![example2](https://github.com/HakanSeven12/NodeCAD/blob/main/screenshots/example2.png)
 
 ## Features
 
