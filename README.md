@@ -14,6 +14,14 @@ NodeCAD is an easy-to-use, open-source CAD software that allows users to create 
 
 ![example2](https://github.com/HakanSeven12/NodeCAD/blob/main/screenshots/example2.png)
 
+## Underlying Technologies
+
+- **[PythonOCC-Core](https://github.com/tpaviot/pythonocc-core):** A powerful geometry kernel for 3D CAD applications. An API for Python created by [Thomas Paviot](https://github.com/tpaviot).
+- **[Ryven](https://github.com/leon-thomm/Ryven):** A node editor written in Python by [Leon Thomm](https://github.com/leon-thomm), enabling visual programming.
+- **[PythonOCC Nodes for Ryven](https://github.com/Tanneguydv/Pythonocc-nodes-for-Ryven):** NodeCAD nodes based on PythonOCC, written by [Tanneguy](https://github.com/Tanneguydv).
+
+These technologies form the foundation of our project, providing robust tools for geometry processing and visual programming.
+
 ## Features
 
 - **User-Friendly Interface**: A simple node based user interface that anyone can use.
