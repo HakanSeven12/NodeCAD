@@ -1,10 +1,3 @@
-![Patreon](https://github.com/HakanSeven12/NodeCAD/assets/3831435/3a64f6a4-9a71-4adf-9f51-6a0014f64a58)
-
-
-
-[Support me on Patreon](https://www.patreon.com/HakanSeven12)
-
-
 # NodeCAD
 
 NodeCAD is an easy-to-use, open-source CAD software that allows users to create and edit 2D and 3D models.
